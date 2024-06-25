@@ -1,0 +1,1343 @@
+---
+title: |
+  Soluciones Hoja2
+author: |
+ Stefan Rada
+subtitle: |
+  Aprendizaje estadístico (43455)
+   Curso 2023/2024
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r, include=FALSE}
+require("boot")
+require("dplyr")        
+require("corrplot")
+require("leaps")        
+require("glmnet")       
+require("lars")
+require("ISLR")
+require("ISLR2")
+source("PlotFunctions.R")
+require("e1071") 
+require("caret") 
+```
+
+<br>
+
+### Ejercicio 1: (6.6.1 ISL)
+
+#### We perform best subset, forward stepwise, and backward stepwise selection on a single data set. For each approach, we obtain p + 1 models, containing 0, 1, 2, . . . , p predictors. Explain your answers:
+
+#### (a). Which of the three models with k predictors has the smallest training RSS?
+
+El modelo con mejores resultados de entrenamiento será el modelo obtenido con la estrategia best subset, ya que es el modelo en el que se evalúan todas las combinaciones posibles de k predictores, por lo que existe la garantía de seleccionar el modelo con k predictores que minimiza el error de entrenamiento.
+
+Forward y Backward stepwise siguen una ruta mediante la cual se agrega o elimina un predictor de manera iterativa, por lo que no se puede garantizar elegir el modelo óptimo al iniciar a partir de un predictor predeterminado.
+
+#### (b). Which of the three models with k predictors has the smallest test RSS?
+
+Los argumentos utilizados en el apartado anterior sirven también en esta pregunta; la estrategia best subset tiene en cuenta más combinaciones de predictores en la elección de un modelo con k predictores, por lo que será el modelo que mejores resultados obtendrá en el conjunto de datos de test.
+
+A pesar de ello, también se deben tener en cuenta los modelos forward y backward stepwise, ya que, al tender al sobreajuste, pueden obtener mejores resultados que el modelo best subset si el conjunto de datos de test es favorable.
+
+#### (c). True or False:
+
+##### i. The predictors in the k-variable model identified by forward stepwise are a subset of the predictors in the (k+1)-variable model identified by forward stepwise selection.
+
+Verdadero. El modelo con k+1 variables según el método forward stepwise se forma a partir del modelo anterior, es decir, el de k variables. Por lo que los k predictores del modelo son un subconjunto de los predictores del modelo k+1, que se forma añadiendo un predictor adicional.
+
+##### ii. The predictors in the k-variable model identified by backward stepwise are a subset of the predictors in the (k + 1)- variable model identified by backward stepwise selection.
+
+Verdadero. El modelo con k variables según el método backward stepwise está formado por k predictores presentes en el modelo anterior (k+1).
+
+##### iii. The predictors in the k-variable model identified by backward stepwise are a subset of the predictors in the (k + 1)- variable model identified by forward stepwise selection.
+
+Falso. Las dos estrategias de selección de predictores no presentan una relación en la elección de k predictores.
+
+##### iv. The predictors in the k-variable model identified by forward stepwise are a subset of the predictors in the (k+1)-variable model identified by backward stepwise selection.
+
+Falso. Misma explicacion que el caso anterior, las dos estrategias de selección de predictores no presentan una relación en la eleccion de k predictores.
+
+##### v. The predictors in the k-variable model identified by best subset are a subset of the predictors in the (k + 1)-variable model identified by best subset selection.
+
+Falso. La selección de modelos por best subset al seleccionar k predictores no presenta ninguna relación en la elección de un subconjunto k de predictores con las estrategias forward y backward stepwise.
+
+<br>
+
+<br>
+
+### Ejercicio 2: (6.6.2 ISL)
+
+#### For parts (a) through (c), indicate which of i. through iv. is correct. Justify your answer.
+
+##### i. More flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in variance.
+
+##### ii. More flexible and hence will give improved prediction accuracy when its increase in variance is less than its decrease in bias.
+
+##### iii. Less flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in variance.
+
+##### iv. Less flexible and hence will give improved prediction accuracy when its increase in variance is less than its decrease in bias.
+
+#### (a). The lasso, relative to least squares, is:
+
+iii\. Less flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in variance.
+
+El método Lasso penaliza coeficientes haciéndolos valer 0, por lo que el modelo se vuelve menos flexible. Si el incremento en sesgo es menor que la disminución en varianza, entonces el modelo tiende a tener una mejor precisión en la predicción.
+
+#### (b). Repeat (a) for ridge regression relative to least squares.
+
+iii\. Less flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in variance.
+
+El método Ridge es menos flexible, por lo que el sesgo aumenta y, si se compensa por la reducción en varianza, tendrá mejores predicciones que el modelo por mínimos cuadrados.
+
+#### (c). Repeat (a) for non-linear methods relative to least squares.
+
+ii\. More flexible and hence will give improved prediction accuracy when its increase in variance is less than its decrease in bias.
+
+Los métodos no lineales pueden encontrar nuevas relaciones en los datos que el método por mínimos cuadrados no puede detectar, por lo que son modelos más flexibles.
+
+Los métodos no lineales obtienen una mayor varianza pero logran reducir el sesgo, resultando en una mayor precisión de las predicciones.
+
+<br>
+
+<br>
+
+### Ejercicio 3: (6.6.3 ISL)
+
+#### Suppose we estimate the regression coefficients in a linear regression model by minimizing
+
+$$ \sum_{i=1}^n\left(y_i - \beta_0 - \sum_{j=1}^p\beta_jx_{ij}\right)^2   \textrm{subject to} \sum_{j=1}^p|\beta_j| \le s $$
+
+#### for a particular value of s. For parts (a) through (e), indicate which of i. through v. is correct. Justify your answer.
+
+##### i. Increase initially, and then eventually start decreasing in an inverted U shape.
+
+##### ii. Decrease initially, and then eventually start increasing in a U shape.
+
+##### iii. Steadily increase.
+
+##### iv. Steadily decrease.
+
+##### v. Remain constant.
+
+#### (a). As we increase s from 0, the training RSS will:
+
+iv\. Steadily decrease.
+
+A medida que aumenta el valor de s, los coeficientes cada vez estarán menos restringidos y se irán acercando a la estimación por mínimos cuadrados, por lo que el error de entrenamiento experimentará una disminución constante.
+
+#### (b). Repeat (a) for test RSS.
+
+ii\. Decrease initially, and then eventually start increasing in a U shape.
+
+El error de test disminuirá al principio pero luego volverá a crecer ya que al incrementar s, disminuyen la restricción en los coeficientes (que se acercarán a los del modelo estimado por mínimos cuadrados), haciendo que el modelo sea cada vez mas flexible y sobreajustando los datos, acción que provoca que el error de test vuelva a incrementarse.
+
+#### (c). Repeat (a) for variance.
+
+iii\. Steadily increase.
+
+Al principio s tiene un valor de 0 por lo que los coeficientes están muy restringidos, por lo que la varianza es casi nula, pero al aumentar s se disminuyen las restricciones de los coeficientes por lo que sus valores se vuelven dependientes de los datos de entrenamiento y el valor de la varianza comienzan a aumentar.
+
+#### (d). Repeat (a) for (squared) bias.
+
+iv\. Steadily decrease.
+
+Al principio los coeficientes hacen predicciones alejadas del modelo real, por lo que el sesgo es elevado, pero a medida que los coeficientes dejan de estar restringidos, sus valores se van acercando a los del modelo estimado por minimos cuadrados y realizan mejores predicciones, por lo que el sesgo disminuye gradualmente.
+
+#### (e). Repeat (a) for the irreducible error.
+
+v\. Remain constant.
+
+El error irreducible es una variable que permanece constante, independiente del modelo, por lo tanto es independiente tambien del valor de s.
+
+<br>
+
+<br>
+
+### Ejercicio 4: (6.6.4 ISL)
+
+#### Suppose we estimate the regression coefficients in a linear regression model by minimizing
+
+$$ \sum_{i=1}^n \left(y_i - \beta_0 - \sum_{j=1}^p\beta_jx_{ij}\right)^2 +   \lambda\sum_{j=1}^p\beta_j^2 $$
+
+#### for a particular value of λ. For parts (a) through (e), indicate which of i. through v. is correct. Justify your answer.
+
+##### i. Increase initially, and then eventually start decreasing in an inverted U shape.
+
+##### ii. Decrease initially, and then eventually start increasing in a U shape.
+
+##### iii. Steadily increase.
+
+##### iv. Steadily decrease.
+
+##### v. Remain constant.
+
+#### (a). As we increase λ from 0, the training RSS will:
+
+iii\. Steadily increase.
+
+A medida que aumenta el valor de λ se restringirán cada vez mas los coeficientes del modelo, por lo que se irán alejando de su estimacion por el metodo de mínimos cuadrados. Esto provocará que el modelo sea cada vez menos flexible, por lo que el error de entrenamiento incrementará cada vez mas.
+
+#### (b). Repeat (a) for test RSS.
+
+ii\. Decrease initially, and then eventually start increasing in a U shape.
+
+A medida que aumenta λ, los coeficientes se restringirán cada vez mas, alejandose de su estimación por minimos cuadrados, haciendo el modelo menos flexible, acción que provoca que inicialmente el error de test disminuya pero aumente de nuevo en forma de U.
+
+#### (c). Repeat (a) for variance.
+
+iv\. Steadily decrease.
+
+A medida que aumenta λ, los coeficientes se alejarán de su estimacion por minimos cuadrados, haciendo que el modelo sea cada vez menos flexible y provocando una disminucion constante de la varianza.
+
+#### (d). Repeat (a) for (squared) bias.
+
+iii\. Steadily increase.
+
+Al principio como λ es 0, el modelo es el estimado por mínimos cuadrados, por lo que el sesgo es muy bajo pero a medida que aumenta λ, los coeficientes se alejarán de su estimacion por minimos cuadrados, haciendo que el modelo sea cada vez menos flexible y provocando un aumento constante del sesgo.
+
+#### (e). Repeat (a) for the irreducible error.
+
+v\. Remain constant.
+
+El error irreducible es una variable que permanece constante, independiente del modelo, por lo tanto es independiente tambien del valor de λ.
+
+<br>
+
+<br>
+
+### Ejercicio 5: (6.6.8 ISL)
+
+#### In this exercise, we will generate simulated data, and will then use this data to perform best subset selection.
+
+#### (a). Use the rnorm() function to generate a predictor X of length n = 100, as well as a noise vector ε of length n = 100.
+
+```{r}
+set.seed(1)
+X = rnorm(100)
+e = rnorm(100) 
+```
+
+#### (b). Generate a response vector Y of length n = 100 according to the model $Y =β_0 +β_1X+β_2X^2 +β_3X^3 +ε$ , where β0, β1, β2, and β3 are constants of your choice.
+
+```{r}
+b0 = 7
+b1 = -3
+b2 = 0.4
+b3 = 13
+
+Y = b0 + b1*X + b2*X^2 + b3*X^3 + e
+```
+
+#### (c). Use the regsubsets() function to perform best subset selection in order to choose the best model containing the predictors X,X\^2,...,X\^10. What is the best model obtained according to Cp, BIC, and adjusted R2? Show some plots to provide evidence for your answer, and report the coefficients of the best model obtained. Note you will need to use the data.frame() function to create a single data set containing both X and Y. En el apartado c) realizar la seleccion de modelos utilizando tambi ́en validaci ́on cruzada de 5 iteraciones (5-folds cross validation).
+
+En este ejercicio se pide aplicar la estrategia de seleccion del mejor subconjunto según diferentes criterios, ademas de añadir la seleccion de subconjuntos mediante validación cruzada.
+
+En la siguiente porcion de codigos se realizan las combinaciones de subconjuntos mediante la función regsubsets.
+
+```{r}
+datos5 <- data.frame(y = Y, x = X)
+modelos5 <- regsubsets(Y ~ X + I(X^2) + I(X^3) + I(X^4) + I(X^5) + I(X^6) + I(X^7) + I(X^8) + I(X^9) + I(X^10), data = datos5, nvmax = 10, method="exhaustive")
+```
+
+Seguidamente se aplica la técnica de validación cruzada a la selección de subconjuntos.
+
+```{r, warning=FALSE}
+#Código para la validación cruzada
+n=nrow(datos5)
+test <-sample(n, round(n/4))     
+datos5.train <- datos5[-test,]
+datos5.test <- datos5[test,]    
+n.train <- nrow(datos5.train) 
+n.test <- nrow(datos5.test)    
+n.modelos <- 10
+
+#Funcion para hacer predicciones sobre los subsets
+predict.regsubsets=function(object,newdata,id,...)
+{
+  form=as.formula(object$call[[2]])
+  mat=model.matrix(form,newdata)
+  coefi=coef(object,id=id)
+  pred=mat[,names(coefi)]%*%coefi
+  return(pred)
+}
+
+k1=5
+folds=sample(rep(1:k1,length=n.train))
+cv.MSE=matrix(NA,k1,n.modelos)
+
+for ( k in 1:k1)
+{
+    reg.temp=regsubsets(Y ~ X + I(X^2) + I(X^3) + I(X^4) + I(X^5) + I(X^6) + I(X^7) + I(X^8) + I(X^9) + I(X^10),data=datos5.train[folds!=k,],nvmax=n.modelos,method="exhaustive")
+    for (i in 1:n.modelos)
+    {
+        pred=predict.regsubsets(reg.temp, datos5.train[folds==k,],id=i)
+        cv.MSE[k,i]=mean((datos5.train$y[folds==k]-pred)^2)
+    }
+}
+
+#Calculo del error MSE
+cv.MSE.models=apply(cv.MSE,2,mean)
+
+best.cv=which.min(cv.MSE.models)       
+best.Subset.cv=best.cv
+```
+
+En las siguientes figuras, se van a mostrar gráficos de los resultados obtenidos a partir del código anterior, en concreto se van a mostrar gráficos en los que se destacan los modelos con la cantidad de predictores que minimizan el criterio Cp y BIC, que maximizan según el criterio $R^2$ ajustado y que minimizan el MSE (modelos seleccionados mediante validación cruzada).
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 5.1. Valores de los criterios CP, BIC, R^2 ajustado y MSE obtenido por Validacion cruzada de 5 iteraciones, para la selección del número de variables de los modelos."}
+
+modelos5.resumen <- summary(modelos5)
+
+par(mfrow = c(2, 2))
+
+plot(modelos5.resumen$cp, xlab = "Número de variables", ylab = expression(C[p]), type = "l")
+points(which.min(modelos5.resumen$cp), modelos5.resumen$cp[which.min(modelos5.resumen$cp)], col = "red", cex = 2, pch = 20)
+
+plot(modelos5.resumen$bic, xlab = "Número de variables", ylab = "BIC", type = "l")
+points(which.min(modelos5.resumen$bic), modelos5.resumen$bic[which.min(modelos5.resumen$bic)], col = "red", cex = 2, pch = 20)
+
+plot(modelos5.resumen$adjr2, xlab = "Número de variables", ylab = expression(Adjusted~R^2), type = "l")
+points(which.max(modelos5.resumen$adjr2), modelos5.resumen$adjr2[which.max(modelos5.resumen$adjr2)], col = "red", cex = 2, pch = 20)
+
+plot(cv.MSE.models, xlab = "Número de variables", ylab = expression("MSE" * "(CV"[5]*")"), type = "l", ylim = c(2085, 2095), lwd = 2)
+points(best.cv, cv.MSE.models[best.cv], pch = 19, col = "red")
+```
+
+Se observa que el modelo óptimo para los diferentes criterios tiene diferentes números de variables. El criterio Cp y el $R^2$ ajustado establece un modelo de 4 predictores, mientras que el BIC establece uno de 3 y la validación cruzada elige el modelo con 7 predictores.
+
+En las tablas inferiores se listan los coeficientes escogidos y sus valores para los diferentes criterios.
+
+```{r}
+coeficientes5.cp <- coef(modelos5, which.min(modelos5.resumen$cp))
+knitr::kable(t(coeficientes5.cp), caption="Tabla 5.1. Coeficientes obtenidos del criterio CP.")
+```
+
+```{r}
+coeficientes5.bic <- coef(modelos5, which.min(modelos5.resumen$bic))
+knitr::kable(t(coeficientes5.bic), caption="Tabla 5.2. Coeficientes obtenidos del criterio BIC.")
+```
+
+```{r}
+coeficientes5.r2adj <- coef(modelos5, which.max(modelos5.resumen$adjr2))
+knitr::kable(t(coeficientes5.r2adj), caption="Tabla 5.3. Coeficientes obtenidos del criterio R^2 ajustado.")
+```
+
+Como se observa, los criterios Cp y $R^2$ ajustado coinciden en la elección de los coeficientes $X^3$, $X^4$ y $X^5$, mientras que el criterio BIC escoge tambien $X^3$ y $X^6$.
+
+#### (d). Repeat (c), using forward stepwise selection and also using backwards stepwise selection. How does your answer compare to the results in (c)?
+
+A continuación se muestran los modelos seleccionados según los diferentes criterios y la estrategia forward stepwise.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 5.2. Valores de los criterios CP, BIC y R^2 ajustado para la selección del número de variables de los modelos mediante la estrategia Forward Stepwise."}
+
+modelos5.forward <- regsubsets(Y ~ X + I(X^2) + I(X^3) + I(X^4) + I(X^5) + I(X^6) + I(X^7) + I(X^8) + I(X^9) + I(X^10), data = datos5, nvmax = 10, method = "forward")
+
+modelos5.forward.resumen <- summary(modelos5.forward)
+
+par(mfrow = c(2, 2))
+
+plot(modelos5.forward.resumen$cp, xlab = "Número de variables", ylab = expression(C[p]), type = "l")
+points(which.min(modelos5.forward.resumen$cp), modelos5.forward.resumen$cp[which.min(modelos5.forward.resumen$cp)], col = "red", cex = 2, pch = 20)
+
+plot(modelos5.forward.resumen$bic, xlab = "Número de variables", ylab = "BIC", type = "l")
+points(which.min(modelos5.forward.resumen$bic), modelos5.forward.resumen$bic[which.min(modelos5.forward.resumen$bic)], col = "red", cex = 2, pch = 20)
+
+plot(modelos5.forward.resumen$adjr2, xlab = "Número de variables", ylab = expression(Adjusted~R^2), type = "l")
+points(which.max(modelos5.forward.resumen$adjr2), modelos5.forward.resumen$adjr2[which.max(modelos5.forward.resumen$adjr2)], col = "red", cex = 2, pch = 20)
+```
+
+A continuacion se muestran los coeficientes obtenidos segun cada criterio y la estrategia forward stepwise.
+
+```{r}
+coeficientes5.forward.cp <- coef(modelos5.forward, which.min(modelos5.forward.resumen$cp))
+knitr::kable(t(coeficientes5.forward.cp), caption="Tabla 5.4. Coeficientes obtenidos del criterio CP y la estrategia Forward Stepwise.")
+```
+
+```{r}
+coeficientes5.forward.bic <- coef(modelos5.forward, which.min(modelos5.forward.resumen$bic))
+knitr::kable(t(coeficientes5.forward.bic), caption="Tabla 5.5. Coeficientes obtenidos del criterio BIC y la estrategia Forward Stepwise.")
+```
+
+```{r}
+coeficientes5.forward.r2adj <- coef(modelos5.forward, which.max(modelos5.forward.resumen$adjr2))
+knitr::kable(t(coeficientes5.forward.r2adj), caption="Tabla 5.6. Coeficientes obtenidos del criterio R2 ajustado y la estrategia Forward Stepwise.")
+```
+
+Como se puede observar, los modelos coinciden en la selección de los coeficientes X, $X^3$ y $X^6$.
+
+A continuación se muestran los modelos seleccionados segun los diferentes criterios y la estrategia Backwards Stepwise.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 5.3. Valores de los criterios CP, BIC y R^2 ajustado para la seleccion del numero de variables de los modelos mediante la estrategia Backwards Stepwise."}
+
+modelos5.backwards <- regsubsets(Y ~ X + I(X^2) + I(X^3) + I(X^4) + I(X^5) + I(X^6) + I(X^7) + I(X^8) + I(X^9) + I(X^10), data = datos5, nvmax = 10, method = "backward")
+
+modelos5.backwards.resumen <- summary(modelos5.backwards)
+
+par(mfrow = c(2, 2))
+
+plot(modelos5.backwards.resumen$cp, xlab = "Número de variables", ylab = expression(C[p]), type = "l")
+points(which.min(modelos5.backwards.resumen$cp), modelos5.backwards.resumen$cp[which.min(modelos5.backwards.resumen$cp)], col = "red", cex = 2, pch = 20)
+
+plot(modelos5.backwards.resumen$bic, xlab = "Número de variables", ylab = "BIC", type = "l")
+points(which.min(modelos5.backwards.resumen$bic), modelos5.backwards.resumen$bic[which.min(modelos5.backwards.resumen$bic)], col = "red", cex = 2, pch = 20)
+
+plot(modelos5.backwards.resumen$adjr2, xlab = "Número de variables", ylab = expression(Adjusted~R^2), type = "l")
+points(which.max(modelos5.backwards.resumen$adjr2), modelos5.backwards.resumen$adjr2[which.max(modelos5.backwards.resumen$adjr2)], col = "red", cex = 2, pch = 20)
+```
+
+A continuacion se muestran los coeficientes obtenidos segun cada criterio y la estrategia Backwards Stepwise.
+
+```{r}
+coeficientes5.backwards.cp <- coef(modelos5.backwards, which.min(modelos5.backwards.resumen$cp))
+knitr::kable(t(coeficientes5.backwards.cp), caption="Tabla 5.7. Coeficientes obtenidos del criterio CP y la estrategia Backwards Stepwise.")
+```
+
+```{r}
+coeficientes5.backwards.bic <- coef(modelos5.backwards, which.min(modelos5.backwards.resumen$bic))
+knitr::kable(t(coeficientes5.backwards.bic), caption="Tabla 5.8. Coeficientes obtenidos del criterio BIC y la estrategia Backwards Stepwise.")
+```
+
+```{r}
+coeficientes5.backwards.r2adj <- coef(modelos5.backwards, which.max(modelos5.backwards.resumen$adjr2))
+knitr::kable(t(coeficientes5.backwards.r2adj), caption="Tabla 5.9. Coeficientes obtenidos del criterio R2 ajustado y la estrategia Backwards Stepwise.")
+```
+
+En este caso se escogen los coeficientes X, $X^3$, $X^4$ y $X^9$.
+
+Como se observa en los coeficientes escogidos mediante la estrategia backwards stepwise, los coeficientes que mas valor aportan en la prediccion son $X^3$ y $X^4$, y coinciden unicamente con la estrategia Forward Stepwise en el coeficiente $X^3$.
+
+#### (e). Now fit a lasso model to the simulated data, again using X, X\^2, . . . , X\^10 as predictors. Use cross-validation to select the optimal value of λ. Create plots of the cross-validation error as a function of λ. Report the resulting coefficient estimates, and discuss the results obtained.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 5.4. Gráfico del error MSE de la validación cruzada en función de lambda."}
+
+matriz <- model.matrix(Y ~ X + I(X^2) + I(X^3) + I(X^4) + I(X^5) + I(X^6) + I(X^7) + I(X^8) + I(X^9) + I(X^10), data = datos5)[, -1]
+
+modelo5.lasso.cv <- cv.glmnet(matriz, Y, alpha = 1)
+
+plot(modelo5.lasso.cv)
+```
+
+A continuación se muestra el valor de lambda que minimiza el error MSE.
+
+```{r}
+lambda <- modelo5.lasso.cv$lambda.min
+print(lambda)
+```
+
+El siguiente paso es ajustar un nuevo modelo con el valor de lambda obtenido anteriormente, del cual se obtendrán los predictores del modelo definitivo.
+
+```{r}
+modelo5.lasso <- glmnet(matriz, Y, alpha = 1)
+modelo5.lasso.coeficientes <- predict(modelo5.lasso, s = lambda, type = "coefficients")[1:11, ]
+knitr::kable(t(modelo5.lasso.coeficientes), caption="Tabla 5.10. Coeficientes obtenidos mediante Lasso.")
+```
+
+El metodo Lasso ha establecido los predictores X, $X^2$, $X^3$, y $X^5$.
+
+No se han encontrado muchas coincidencias con los anteriores modelos obtenidos mediante diferentes criterios, unicamente cabe destacar el predictor $X^3$ que aparece varias veces, con lo que se puede concluir que es una variable importante en cuanto a la predicción.
+
+#### (f). Now generate a response vector Y according to the model $Y = β_0 + β_7*X^7 + ε$, and perform best subset selection and the lasso. Discuss the results obtained.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 5.5. Valores de los criterios CP, BIC y R^2 ajustado para la selección del numero de variables de los modelos del apartado F."}
+
+b7 <- 33
+Y = b0 + b7 * X^7 + e
+
+datos5.f <- data.frame(y = Y, x = X)
+modelos5.f <- regsubsets(Y ~ X + I(X^2) + I(X^3) + I(X^4) + I(X^5) + I(X^6) + I(X^7) + I(X^8) + I(X^9) + I(X^10), data = datos5.f, nvmax = 10, method="exhaustive")
+modelos5.f.resumen <- summary(modelos5.f)
+
+par(mfrow = c(2, 2))
+
+plot(modelos5.f.resumen$cp, xlab = "Número de variables", ylab = expression(C[p]), type = "l")
+points(which.min(modelos5.f.resumen$cp), modelos5.f.resumen$cp[which.min(modelos5.f.resumen$cp)], col = "red", cex = 2, pch = 20)
+
+plot(modelos5.f.resumen$bic, xlab = "Número de variables", ylab = "BIC", type = "l")
+points(which.min(modelos5.f.resumen$bic), modelos5.f.resumen$bic[which.min(modelos5.f.resumen$bic)], col = "red", cex = 2, pch = 20)
+
+plot(modelos5.f.resumen$adjr2, xlab = "Número de variables", ylab = expression(Adjusted~R^2), type = "l")
+points(which.max(modelos5.f.resumen$adjr2), modelos5.f.resumen$adjr2[which.max(modelos5.f.resumen$adjr2)], col = "red", cex = 2, pch = 20)
+```
+
+A continuación se mostrarán los coeficientes obtenidos en el nuevo modelo con vector de resupuesa Y segun los criterios establecidos.
+
+```{r}
+coeficientes5.f.cp <- coef(modelos5.f, which.min(modelos5.f.resumen$cp))
+knitr::kable(t(coeficientes5.f.cp), caption="Tabla 5.11. Coeficientes obtenidos del criterio CP en el nuevo vector respuesta Y.")
+```
+
+```{r}
+coeficientes5.f.bic <- coef(modelos5.f, which.min(modelos5.f.resumen$bic))
+knitr::kable(t(coeficientes5.f.bic), caption="Tabla 5.12. Coeficientes obtenidos del criterio BIC en el nuevo vector respuesta Y.")
+```
+
+```{r}
+coeficientes5.f.r2adj <- coef(modelos5.f, which.max(modelos5.f.resumen$adjr2))
+knitr::kable(t(coeficientes5.f.r2adj), caption="Tabla 5.13. Coeficientes obtenidos del criterio R^2 ajustado en el nuevo vector respuesta Y.")
+```
+
+Se observa que el predictor $X^7$ está presente en los 3 criterios establecidos, tiene sentido ya que la variable $X^7$ forma parte del vector respuesta Y.
+
+A continuación se desarrollará el metodo Lasso en el nuevo vector respuesta Y.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 5.6. Gráfico del error MSE de la validación cruzada en función de lambda para el nuevo vector respuesta Y."}
+
+matriz.f <- model.matrix(Y ~ X + I(X^2) + I(X^3) + I(X^4) + I(X^5) + I(X^6) + I(X^7) + I(X^8) + I(X^9) + I(X^10), data = datos5)[, -1]
+
+modelo5.f.lasso.cv <- cv.glmnet(matriz.f, Y, alpha = 1)
+
+plot(modelo5.f.lasso.cv)
+```
+
+A continuación se muestra el valor de lambda que minimiza el MSE.
+
+```{r}
+lambda.f <- modelo5.f.lasso.cv$lambda.min
+print(lambda.f)
+```
+
+Seguidamente, en la tabla se muestran los coeficientes obtenidos mediante el metodo Lasso, del nuevo vector respuesta Y.
+
+```{r}
+modelo5.f.lasso <- glmnet(matriz.f, Y, alpha = 1)
+modelo5.f.lasso.coeficientes <- predict(modelo5.f.lasso, s = lambda.f, type = "coefficients")[1:11, ]
+knitr::kable(t(modelo5.f.lasso.coeficientes), caption="Tabla 5.14. Coeficientes obtenidos mediante Lasso.")
+```
+
+Como se observa en la tabla anterior, el metodo Lasso obtiene un modelo de un solo predictor, el de la variable $X^7$, en concordancia con la formula del vector respuesta Y.
+
+<br>
+
+<br>
+
+### Ejercicio 6: (6.6.9 ISL)
+
+#### In this exercise, we will predict the number of applications received using the other variables in the College data set.
+
+#### (a). Split the data set into a training set and a test set.
+
+```{r}
+data(College)
+
+top_Data <- head(College)
+
+knitr::kable(top_Data, caption="Tabla 6.1. Seis primeras filas del dataset College")
+```
+
+```{r}
+set.seed(1)
+
+#Particion de 75% para train y el resto para test
+indices <- sample(1:nrow(College), size = 0.75 * nrow(College))
+
+datos6.train <- College[indices, ]
+datos6.test <- College[-indices, ]
+```
+
+#### (b). Fit a linear model using least squares on the training set, and report the test error obtained.
+
+```{r}
+modelo6 <- lm(Apps ~ ., data = datos6.train)
+predicciones <- predict(modelo6, datos6.test)
+
+print(mean((predicciones - datos6.test$Apps)^2))
+```
+
+El error cuadratico medio calculado en el conjunto de test es de 1384604.
+
+#### (c). Fit a ridge regression model on the training set, with λ chosen by cross-validation. Report the test error obtained.
+
+A continuacion se muestra el desarrollo del modelo de regresion Ridge, del cual se obtendrán dos valores lambda, segun las reglas min MSE y 1SD.
+
+```{r}
+datos6.train.matriz <- model.matrix(Apps ~ ., data = datos6.train)
+datos6.test.matriz <- model.matrix(Apps ~ ., data = datos6.test)
+
+grid <- 10 ^ seq(4, 1, length = 1000) 
+
+modelo6.ridge <- glmnet(datos6.train.matriz, datos6.train$Apps, alpha = 0, lambda = grid, thresh = 1e-12)
+
+set.seed(1)
+validacion_cruz.ridge <- cv.glmnet(datos6.train.matriz, datos6.train$Apps, alpha = 0, nfolds=10,type.measure="mse")
+
+mejor_lambda.ridge.mse <- validacion_cruz.ridge$lambda.min #Regla min MSE
+mejor_lambda.ridge.1se <- validacion_cruz.ridge$lambda.1se #Regla 1SD
+
+print(mejor_lambda.ridge.mse)
+print(mejor_lambda.ridge.1se)
+```
+
+En la siguiente porcion de codigo se calcula el error cuadratico medio del metodo Ridge ajustado con el valor lambda obtenido segun la regla min MSE.
+
+```{r}
+predicciones.ridge.mse <- predict(modelo6.ridge, s = mejor_lambda.ridge.mse, newx = datos6.test.matriz)
+print(mean((predicciones.ridge.mse - datos6.test$Apps)^2))
+```
+
+Con este valor lambda se observa una mejora notable en el error de test respecto al modelo entrenado por minimos cuadrados.
+
+A continuacion se calculará el MSE con el valor lambda obtenido segun la regla 1SD.
+
+```{r}
+predicciones.ridge.1se <- predict(modelo6.ridge, s = mejor_lambda.ridge.1se, newx = datos6.test.matriz)
+print(mean((predicciones.ridge.1se - datos6.test$Apps)^2))
+```
+
+Con este valor de lambda se obtiene mucho mas error que los dos modelos anteriores.
+
+#### (d). Fit a lasso model on the training set, with λ chosen by cross- validation. Report the test error obtained, along with the number of non-zero coefficient estimates.
+
+A continuacion se muestra el desarrollo del modelo de regresion Lasso, del cual se obtendrán dos valores lambda, segun las reglas min MSE y 1SD.
+
+```{r}
+modelo6.lasso <- glmnet(datos6.train.matriz, datos6.train$Apps, alpha = 1)
+
+validacion_cruz.lasso <- cv.glmnet(datos6.train.matriz, datos6.train$Apps, alpha = 1, type.measure="mse")
+
+mejor_lambda.lasso.mse <- validacion_cruz.lasso$lambda.min
+mejor_lambda.lasso.1se <- validacion_cruz.lasso$lambda.1se
+print(mejor_lambda.lasso.mse)
+print(mejor_lambda.lasso.1se)
+```
+
+A continuacion, de la misma manera que en el apartado anterior se calculará el MSE con el valor lambda obtenido segun la regla min MSE.
+
+```{r}
+predicciones.lasso.mse <- predict(modelo6.lasso, s = mejor_lambda.lasso.mse, newx = datos6.test.matriz)
+print(mean((predicciones.lasso.mse - datos6.test$Apps)^2))
+```
+
+En el modelo Lasso ajustado con lambda segun la regla min MSE se obtiene mas error que el modelo Ridge ajustado segun el mismo criterio.
+
+A continuacion se calculará el MSE con el valor lambda obtenido segun la regla 1SD.
+
+```{r}
+predicciones.lasso.1se <- predict(modelo6.lasso, s = mejor_lambda.lasso.1se, newx = datos6.test.matriz)
+print(mean((predicciones.lasso.1se - datos6.test$Apps)^2))
+```
+
+El modelo Lasso ajustado con lambda segun la regla 1SD obtiene menos error que el modelo Ridge ajustado segun el mismo criterio.
+
+A continuacion se muestran, tal cual indica el enunciado del ejercicio, los coeficientes del modelo Lasso ajustado segun la regla min MSE.
+
+```{r}
+coeficientes.lasso.mse <- predict(modelo6.lasso, s = mejor_lambda.lasso.mse, type = "coefficients")
+coeficientes.lasso_df.mse <- as.data.frame(as.matrix(coeficientes.lasso.mse))
+knitr::kable(t(coeficientes.lasso_df.mse), caption="Tabla 6.2. Coeficientes obtenidos mediante Lasso y la regla min MSE")
+```
+
+Seguidamente se muestran los coeficientes del modelo Lasso ajustado segun la regla 1SD.
+
+```{r}
+coeficientes.lasso.1se <- predict(modelo6.lasso, s = mejor_lambda.lasso.1se, type = "coefficients")
+coeficientes.lasso_df.1se <- as.data.frame(as.matrix(coeficientes.lasso.1se))
+knitr::kable(t(coeficientes.lasso_df.1se), caption="Tabla 6.3. Coeficientes obtenidos mediante Lasso y la regla 1SD.")
+```
+
+Como se observa en las tablas anteriores, el modelo Lasso ajustado con el valor de lambda segun la regla 1SD dispone de menos predictores que la regla min MSE.
+
+#### (g). Comment on the results obtained. How accurately can we predict the number of college applications received? Is there much difference among the test errors resulting from these three approaches?
+
+En la siguiente tabla se muestran los diferentes modelos entrenados en este ejercicio y el error cuadratico medio que muestran.
+
+```{r}
+resultados <- data.frame(
+  Modelo = c("Mínimos Cuadrados", "Ridge min MSE", "Ridge 1SD", "Lasso min MSE", "Lasso 1SD"),
+  MSE = c(1384604, 1206724, 1520999, 1370403, 1417353)
+)
+
+knitr::kable((resultados), caption = "Tabla 6.4. Valores MSE de los modelos desarrollados en el ejercicio 6.")
+```
+
+En conclusion, el modelo óptimo que menos error de test presenta es el modelo Ridge ajustado segun la regla min MSE, por lo que sería el modelo a seleccionar para predecir con mayor precision el numero de solicitudes a las universidades.
+
+<br>
+
+### Ejercicio 7: (4.8.6 ISL)
+
+#### Suppose we collect data for a group of students in a statistics class with variables $X_1 = \textrm{hours studied}$, $X_2 = \textrm{undergrad GPA}$, and $Y = \textrm{receive an A}$. We fit a logistic regression and produce estimated coefficient, $\hatβ_0 = −6$, $\hatβ_1 = 0.05$, $\hatβ_2 = 1$.
+
+#### (a). Estimate the probability that a student who studies for 40 h and has an undergrad GPA of 3.5 gets an A in the class.
+
+La formula a utilizr para resolver el problema planteado es la siguiente:
+
+![](images/clipboard-4212047109.png){width="407"}
+
+Sustituyendo en la formula los valores del enunciado se obtiene:
+
+${p}(X) = \frac{e^{-6 + 0.05 * 40 + 3.5}}{1 + e^{-6 + 0.05 * 40 + 3.5}} = 0.3775$
+
+Por lo que la probabilidad de que un alumno que estudia 40h con un GPA de 3.5 obtenga un A es de 0.38.
+
+#### (b). How many hours would the student in part (a) need to study to have a 50 % chance of getting an A in the class?
+
+En este caso necesitamos saber las horas que estudia a la semana, por lo que tenemos que hallar $X_1$:
+
+$\frac{e^{-6 + 0.05X_1 + 3.5}}{1 + e^{-6 + 0.05X_1 + 3.5}} = 0.5$
+
+La formula anterior simplificada es la siguiente
+
+$e^{−6+0.05X_1+3.5}=1$
+
+Aplicando logaritmos:
+
+$−6+0.05X_1+3.5=0$
+
+$0.05 * X_1 = 2.5$
+
+$X_1 = 50$
+
+Por lo que se concluye que el alumno del apartado (a) necesitaria 50h de estudio para tener un 50% de probabilidad de obtener una puntuacion de A.
+
+<br>
+
+<br>
+
+### Ejercicio 8: (4.8.8 ISL)
+
+#### Suppose that we take a data set, divide it into equally-sized training and test sets, and then try out two different classification procedures. First we use logistic regression and get an error rate of 20 % on the training data and 30 % on the test data. Next we use 1-nearest neighbors (i.e. K = 1) and get an average error rate (averaged over both test and training data sets) of 18%. Based on these results, which method should we prefer to use for classification of new observations? Why?
+
+La estrategia KNN con k = 1 implica un 0% de error de entrenamiento, ya que no tiene en cuenta ningun otro vecino, unicamente la muestra. Esta caracteristica implica que la prediccion en el conjunto de entrenamiento siempre será acertada y el modelo sobreajustado, por lo que, en resumen, el error de entrenamiento de KNN con k=1 es de 0%. El enunciado explica que el promedio de los errores es de 18%, por lo que el error de test de KNN tiene un valor de 36% (36/2 = 18).
+
+En este caso es preferible elegir el metodo de clasificacion mediante regresion logistica, ya que tiene un error de test de 30% frente al 36% de los k vecinos mas cercanos con K = 1.
+
+<br>
+
+<br>
+
+### Ejercicio 9: (4.8.14 ISL)
+
+#### In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the Auto data set.
+
+```{r}
+top_data <- head(Auto)
+
+knitr::kable(top_data, caption="Tabla 9.1. Seis primeras filas del dataset Auto.")
+```
+
+#### (a). Create a binary variable, mpg01, that contains a 1 if mpg contains a value above its median, and a 0 if mpg contains a value below its median. You can compute the median using the median() function. Note you may find it helpful to use the data.frame() function to create a single data set containing both mpg01 and the other Auto variables.
+
+```{r}
+mpg01 <- rep(0, length(Auto$mpg))
+mediana <- median(Auto$mpg)
+mpg01[Auto$mpg > mediana] <- 1
+datos9 <- data.frame(Auto, mpg01)
+```
+
+#### (b). Explore the data graphically in order to investigate the association between mpg01 and the other features. Which of the other features seem most likely to be useful in predicting mpg01? Scatterplots and boxplots may be useful tools to answer this question. Describe your findings.
+
+Se han dividido las diferentes variables explicativas del conjunto de datos en cualitativas y cuantitativas con el objetido de explorar graficamente las relaciones con la variable respuesta mpg01.
+
+En las siguientes porciones de codigo se explora graficamente las variables cualitativas: year y origin.
+
+NOTA: En este estudio gráfico se han considerado las variables year y origin como cualitativas, a pesar de ello al ser todas numericas tambien se podrian considerar cuantitativas.
+
+Para construir el diagrama de barras primero se han obtenido todos los niveles de las variables, posteriormente se ha calculado el porcentaje de individios con la variable mpg01 = 1 para cada nivel de la variable cualitativa y se han construido los gráficos.
+
+```{r}
+print(unique(datos9$year))
+print(unique(datos9$origin))
+```
+
+```{r, fig.width = 9,fig.height = 5, fig.cap="Figura 9.1. Gráfico de porcentajes de muestras con la variable respuesta mpg01 y las diferentes variables cualitativas, cuando el valor de la variable respuesta es igual a 1."}
+
+porcentaje.anyos <- c(nrow(datos9[datos9$mpg01 == '1' & datos9$year == '70', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$year == '71', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$year == '72', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$year == '73', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$year == '74', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$year == '75', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$year == '76', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$year == '77', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$year == '78', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$year == '79', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$year == '80', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$year == '81', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$year == '82', ]) / nrow(datos9))
+anyos <- c('70', '71', '72', '73', '74', '75', '76', '77', '78', '79', '80', '81', '82')
+
+porcentaje.origin <- c(nrow(datos9[datos9$mpg01 == '1' & datos9$origin == '1', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$origin == '2', ]) / nrow(datos9),
+                          nrow(datos9[datos9$mpg01 == '1' & datos9$origin == '3', ]) / nrow(datos9))
+origen <- c('1', '2', '3')
+
+
+par(mfrow = c(1, 2))
+
+barplot(porcentaje.anyos, names.arg = anyos,
+        main = "mpg01 = 1 - year",
+        xlab = "Año",
+        ylab = "Porcentaje")
+
+barplot(porcentaje.origin, names.arg = origen,
+        main = "mpg01 = 1 - origin",
+        xlab = "Origin",
+        ylab = "Porcentaje")
+```
+
+Como se observa en los gráficos, ninguna de las variables consideradas cualitativas disponen de relación con la variable respuesta cuando su valor es igual a 1, ya que los porcentajes son muy bajos y no existe ningún nivel diferenciado de las variables cualitativas que permita suponer que se trata de una variable relacionada con la variable respuesta.
+
+La siguiente porcion de codigo corresponde a la exploracion de las variables cuantitativas, para las cuales se han creado diagramas de cajas.
+
+```{r, fig.width = 7,fig.height = 9, fig.cap="Figura 9.2. Diagramas de cajas para los diferentes valores de la variable respuesta mpg01 y las diferentes variables cuantitativas."}
+
+datos_mpg01_1 <- datos9[datos9$mpg01 == 1, ]
+datos_mpg01_0 <- datos9[datos9$mpg01 == 0, ]
+
+par(mfrow = c(3, 2))
+
+boxplot(datos_mpg01_1$cylinders, datos_mpg01_0$cylinders, 
+        names = c("mpg01 = 1", "mpg01 = 0"),
+        col = c("green", "purple"),
+        main = "mpg01 - cylinders",
+        ylab = "Cylinders",
+        xlab = "mpg01")
+
+boxplot(datos_mpg01_1$displacement, datos_mpg01_0$displacement, 
+        names = c("mpg01 = 1", "mpg01 = 0"),
+        col = c("green", "purple"),
+        main = "mpg01 - displacement",
+        ylab = "Displacement",
+        xlab = "mpg01")
+
+boxplot(datos_mpg01_1$horsepower, datos_mpg01_0$horsepower, 
+        names = c("mpg01 = 1", "mpg01 = 0"),
+        col = c("green", "purple"),
+        main = "mpg01 - horsepower",
+        ylab = "Horsepower",
+        xlab = "mpg01")
+
+boxplot(datos_mpg01_1$weight, datos_mpg01_0$weight, 
+        names = c("mpg01 = 1", "mpg01 = 0"),
+        col = c("green", "purple"),
+        main = "mpg01 - weight",
+        ylab = "Weight",
+        xlab = "mpg01")
+
+boxplot(datos_mpg01_1$acceleration, datos_mpg01_0$acceleration, 
+        names = c("mpg01 = 1", "mpg01 = 0"),
+        col = c("green", "purple"),
+        main = "mpg01 - acceleration",
+        ylab = "Acceleration",
+        xlab = "mpg01")
+```
+
+Observando los diferentes diagramas de cajas generados, se puede asegurar que existen relaciones entre las variables "cylinders”, “weight”, “displacement” y “horsepower” con la variable respuesta "mpg01".
+
+Esto se debe a la diferencia de los valores de las variables cuantitativas cuando la variable respuesta es igual a 1 o a 0.
+
+#### (c). Split the data into a training set and a test set.
+
+```{r}
+set.seed(1)
+
+#Particion de 75% para train y el resto para test
+indices <- sample(1:nrow(datos9), size = 0.75 * nrow(datos9))
+
+datos9.train <- datos9[indices, ]
+datos9.test <- datos9[-indices, ]
+mpg01.test <- mpg01[-indices]
+```
+
+#### (f). Perform logistic regression on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?
+
+En la siguiente porcion de codigo se ha desarrollado un modelo de regresion logistica con las variables que mas relación presentaban con la variable respuesta "mpg01".
+
+```{r}
+modelo9.f <- glm(mpg01 ~ cylinders + weight + displacement + horsepower, data = datos9.train, family = binomial)
+summary(modelo9.f)
+```
+
+A continuación se calcula la tasa de error en el conjunto de test.
+
+```{r}
+predicciones9 <- predict(modelo9.f, newdata = datos9.test, type = "response")
+
+predicciones9.etiq <- ifelse(predicciones9 > 0.5, 1, 0)
+
+error <- mean(predicciones9.etiq != datos9.test$mpg01)
+
+cat("Error de prueba:", error, "\n")
+```
+
+Como se observa en la salida proporcionada por el codigo, el modelo de regresion logistico entrenado presenta una tasa de error en el conjunto de test del 10%, equivalente a una tasa de acierto del 90% aproximado (0.89796).
+
+Este resultado podria variar si se modifica la condición de decision, ya que si la predicción ha sido con poca confianza (valor proximo a 0,5) la condición usada puede clasificar erroneamente, si se cambia la condicion los resultados pueden variar: por ejemplo se puede configurar la clasificacion a 1 si la prediccion es \> 0.6 y a 0 si la prediccion es \< 0.4.
+
+#### (h). Perform KNN on the training data, with several values of K, in order to predict mpg01. Use only the variables that seemed most associated with mpg01 in (b). What test errors do you obtain? Which value of K seems to perform the best on this data set?
+
+En este apartado se pide el desarrollo de multiples modelos mediante los k vecinos mas cercanos. En las porciones de codigo mostradas a continuación se aplicará esa estrategia con el valor de K igual a 1, 2, 3, 5, 7, 9, 10 y 13, con el objetivo de comparar su tasa de acierto en el conjunto de test y obtener el modelo mas eficaz.
+
+```{r}
+datos9$mpg01 <- as.factor(datos9$mpg01)
+
+datos9.train <- datos9[indices, ]
+datos9.test <- datos9[-indices, ]
+mpg01.test <- mpg01[-indices]
+```
+
+```{r}
+set.seed(1)
+modelo9.knn.1 <- knn3(mpg01 ~ cylinders + weight + displacement + horsepower, data = datos9.train , k=1)
+
+truth.train=datos9.train$mpg01
+pred.train=predict(modelo9.knn.1,datos9.train,type="class")
+table.train=table(pred.train,truth.train)
+
+Performance.train.KNN=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+truth.test=datos9.test$mpg01
+pred.test=predict(modelo9.knn.1,datos9.test,type="class")
+table.test=table(pred.test,truth.test)
+
+Performance.test.KNN=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+Error.KNN=rbind(cbind(Performance.train.KNN$overall[1],Performance.test.KNN$overall[1]),
+      cbind(Performance.train.KNN$byClass,Performance.test.KNN$byClass))
+colnames(Error.KNN)=c("Train","Test")
+
+knitr::kable((Error.KNN[c(1, 2, 8), ]), caption="Tabla 9.2. Resultados del modelo KNN con k = 1.")
+```
+
+```{r}
+set.seed(1)
+modelo9.knn.2 <- knn3(mpg01 ~ cylinders + weight + displacement + horsepower, data = datos9.train , k=2)
+
+truth.train=datos9.train$mpg01
+pred.train=predict(modelo9.knn.2,datos9.train,type="class")
+table.train=table(pred.train,truth.train)
+
+Performance.train.KNN=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+truth.test=datos9.test$mpg01
+pred.test=predict(modelo9.knn.2,datos9.test,type="class")
+table.test=table(pred.test,truth.test)
+
+Performance.test.KNN=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+Error.KNN=rbind(cbind(Performance.train.KNN$overall[1],Performance.test.KNN$overall[1]),
+      cbind(Performance.train.KNN$byClass,Performance.test.KNN$byClass))
+colnames(Error.KNN)=c("Train","Test")
+
+knitr::kable((Error.KNN[c(1, 2, 8), ]), caption="Tabla 9.3. Resultados del modelo KNN con k = 2.")
+```
+
+```{r}
+set.seed(1)
+modelo9.knn.3 <- knn3(mpg01 ~ cylinders + weight + displacement + horsepower, data = datos9.train , k=3)
+
+truth.train=datos9.train$mpg01
+pred.train=predict(modelo9.knn.3,datos9.train,type="class")
+table.train=table(pred.train,truth.train)
+
+Performance.train.KNN=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+truth.test=datos9.test$mpg01
+pred.test=predict(modelo9.knn.3,datos9.test,type="class")
+table.test=table(pred.test,truth.test)
+
+Performance.test.KNN=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+Error.KNN=rbind(cbind(Performance.train.KNN$overall[1],Performance.test.KNN$overall[1]),
+      cbind(Performance.train.KNN$byClass,Performance.test.KNN$byClass))
+colnames(Error.KNN)=c("Train","Test")
+
+knitr::kable((Error.KNN[c(1, 2, 8), ]), caption="Tabla 9.4. Resultados del modelo KNN con k = 3.")
+```
+
+```{r}
+set.seed(1)
+modelo9.knn.5 <- knn3(mpg01 ~ cylinders + weight + displacement + horsepower, data = datos9.train , k=5)
+
+truth.train=datos9.train$mpg01
+pred.train=predict(modelo9.knn.5,datos9.train,type="class")
+table.train=table(pred.train,truth.train)
+
+Performance.train.KNN=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+truth.test=datos9.test$mpg01
+pred.test=predict(modelo9.knn.5,datos9.test,type="class")
+table.test=table(pred.test,truth.test)
+
+Performance.test.KNN=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+Error.KNN=rbind(cbind(Performance.train.KNN$overall[1],Performance.test.KNN$overall[1]),
+      cbind(Performance.train.KNN$byClass,Performance.test.KNN$byClass))
+colnames(Error.KNN)=c("Train","Test")
+
+knitr::kable((Error.KNN[c(1, 2, 8), ]), caption="Tabla 9.5. Resultados del modelo KNN con k = 5.")
+```
+
+```{r}
+set.seed(1)
+modelo9.knn.7 <- knn3(mpg01 ~ cylinders + weight + displacement + horsepower, data = datos9.train , k=7)
+
+truth.train=datos9.train$mpg01
+pred.train=predict(modelo9.knn.7,datos9.train,type="class")
+table.train=table(pred.train,truth.train)
+
+Performance.train.KNN=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+truth.test=datos9.test$mpg01
+pred.test=predict(modelo9.knn.7,datos9.test,type="class")
+table.test=table(pred.test,truth.test)
+
+Performance.test.KNN=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+Error.KNN=rbind(cbind(Performance.train.KNN$overall[1],Performance.test.KNN$overall[1]),
+      cbind(Performance.train.KNN$byClass,Performance.test.KNN$byClass))
+colnames(Error.KNN)=c("Train","Test")
+
+knitr::kable((Error.KNN[c(1, 2, 8), ]), caption="Tabla 9.6. Resultados del modelo KNN con k = 7.")
+```
+
+```{r}
+set.seed(1)
+modelo9.knn.9 <- knn3(mpg01 ~ cylinders + weight + displacement + horsepower, data = datos9.train , k=9)
+
+truth.train=datos9.train$mpg01
+pred.train=predict(modelo9.knn.9,datos9.train,type="class")
+table.train=table(pred.train,truth.train)
+
+Performance.train.KNN=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+truth.test=datos9.test$mpg01
+pred.test=predict(modelo9.knn.9,datos9.test,type="class")
+table.test=table(pred.test,truth.test)
+
+Performance.test.KNN=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+Error.KNN=rbind(cbind(Performance.train.KNN$overall[1],Performance.test.KNN$overall[1]),
+      cbind(Performance.train.KNN$byClass,Performance.test.KNN$byClass))
+colnames(Error.KNN)=c("Train","Test")
+
+knitr::kable((Error.KNN[c(1, 2, 8), ]), caption="Tabla 9.7. Resultados del modelo KNN con k = 9.")
+```
+
+```{r}
+set.seed(1)
+modelo9.knn.10 <- knn3(mpg01 ~ cylinders + weight + displacement + horsepower, data = datos9.train , k=10)
+
+truth.train=datos9.train$mpg01
+pred.train=predict(modelo9.knn.10,datos9.train,type="class")
+table.train=table(pred.train,truth.train)
+
+Performance.train.KNN=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+truth.test=datos9.test$mpg01
+pred.test=predict(modelo9.knn.10,datos9.test,type="class")
+table.test=table(pred.test,truth.test)
+
+Performance.test.KNN=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+Error.KNN=rbind(cbind(Performance.train.KNN$overall[1],Performance.test.KNN$overall[1]),
+      cbind(Performance.train.KNN$byClass,Performance.test.KNN$byClass))
+colnames(Error.KNN)=c("Train","Test")
+
+knitr::kable((Error.KNN[c(1, 2, 8), ]), caption="Tabla 9.8. Resultados del modelo KNN con k = 10.")
+```
+
+```{r}
+set.seed(1)
+modelo9.knn.13 <- knn3(mpg01 ~ cylinders + weight + displacement + horsepower, data = datos9.train , k=13)
+
+truth.train=datos9.train$mpg01
+pred.train=predict(modelo9.knn.13,datos9.train,type="class")
+table.train=table(pred.train,truth.train)
+
+Performance.train.KNN=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+truth.test=datos9.test$mpg01
+pred.test=predict(modelo9.knn.13,datos9.test,type="class")
+table.test=table(pred.test,truth.test)
+
+Performance.test.KNN=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+Error.KNN=rbind(cbind(Performance.train.KNN$overall[1],Performance.test.KNN$overall[1]),
+      cbind(Performance.train.KNN$byClass,Performance.test.KNN$byClass))
+colnames(Error.KNN)=c("Train","Test")
+
+knitr::kable((Error.KNN[c(1, 2, 8), ]), caption="Tabla 9.9. Resultados del modelo KNN con k = 13.")
+```
+
+De los 3 modelos creados, con K = {1, 2, 3, 5, 7, 9, 10, 13}, el que mayor tasa de acierto presenta es el modelo con K = 3, con aproximadamente un 88% de aciertos.
+
+En las tablas de resultados de cada modelo tambien se ha incluido las metricas de la sensibilidad y el F1 score con el objetivo de ser consultadas si fuera necesario.
+
+<br>
+
+<br>
+
+### Ejercicio 10
+
+#### A partir del conjunto de datos de entrenamiento y del conjunto de datos de prueba utilizados en el ejercicio anterior:
+
+#### (a). Aplica SVM con el kernel lineal con diferentes valores del parametro cost. Utiliza la validacion cruzada de 5 iteraciones para determinar el valor optimo del parametro cost. Escribe el clasificador SVM asociado al valor ́optimo del par ́ametro cost y calcula el error de clasificacion en el conjunto test.
+
+A continuacion, tal cual indica el enunciado, se va a aplicar SVM con kernel lineal con un parametro coste de 30 y posteriormente se va a calcular el parametro óptimo de la variable cost, con el objetivo de comparar los resultados, en este caso se va a utilizar la metrica tasa de acierto.
+
+El primer paso es instanciar el SVM.
+
+```{r, warning=FALSE}
+svm10.lin.worst <- svm(mpg01 ~ cylinders + weight + displacement + horsepower, data=datos9.train, kernel="linear", cost=30, scale=FALSE) 
+```
+
+Una vez desarrollado, en la siguiente porcion de código se va a calcular la tasa de acierto que presenta, mostrada en la tabla, junto a la sensibilidad y el F1 score.
+
+```{r}
+truth.train=datos9.train$mpg01
+pred.train=predict(svm10.lin.worst,datos9.train)
+table.train=table(pred.train,truth.train)
+
+Performance.train.SVM.blando=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+truth.test=datos9.test$mpg01
+pred.test=predict(svm10.lin.worst,datos9.test)
+table.test=table(pred.test,truth.test)
+
+Performance.test.SVM.blando=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+Error.SVM.blando=rbind(cbind(Performance.train.SVM.blando$overall[1],Performance.test.SVM.blando$overall[1]),
+      cbind(Performance.train.SVM.blando$byClass,Performance.test.SVM.blando$byClass))
+colnames(Error.SVM.blando)=c("Train","Test")
+
+knitr::kable((Error.SVM.blando[c(1, 2, 8), ]), caption="Tabla 10.1. Resultados del modelo SVM lineal con parametro coste = 30.")
+```
+
+Ahora se va a calcular el parametro cost optimo para el desarrollo de un nuevo SVM con el kernel lineal. Para la determinacion del parametro cost, en el codigo mostrado a continuacion se utiliza la validacion cruzada y la metrica tasa de acierto.
+
+```{r, warning=FALSE}
+n=nrow(datos9.train)
+Cost.vec=c(0.001, 0.01, 0.1, seq(1,10),seq(20,100,by=10))
+l.C=length(Cost.vec)
+k1=10      # número de folds
+Accuracy.CV=matrix(rep(NA,l.C*2),ncol=2)
+set.seed(4)
+ folds=sample(rep(1:k1,length=n))
+for (c in 1:l.C)
+{
+  cv.accuracy=rep(NA,k1)
+  for ( k in 1:k1)
+   {
+      model.cv.temp=svm(mpg01 ~ cylinders + weight + displacement + horsepower, data=datos9.train[folds!=k, ], kernel="linear", cost=Cost.vec[c],scale=FALSE) 
+      pred=predict(model.cv.temp, datos9.train[folds==k,])
+      cv.accuracy[k]=confusionMatrix(pred, datos9.train[folds==k,]$mpg01, positive="1",mode="everything")$overall[1]
+   }
+Accuracy.CV[c,]=c(mean( cv.accuracy),sd(cv.accuracy))
+}
+RESULTS.CV=cbind(Cost.vec,Accuracy.CV)
+colnames(RESULTS.CV)=c("Coste (C)","Tasa de acierto","Sd")
+```
+
+El mejor parametro para la variable coste obtenido por validacion cruzada se muestra a continuacion.
+
+```{r}
+best.cost.parameter=Cost.vec[Accuracy.CV[,1]==max(Accuracy.CV[,1])][1] 
+best.cost.parameter
+```
+
+Este parametro se puede observar tambien en el gráfico mostrado a continuación, en el que se relaciona el valor de la tasa de acierto en función del parámetro coste C, y se destaca el coste optimo
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 10.1. Gráfico de la tasa de acierto maxima en funcion del parametro coste."}
+
+index.best.Cost.CV=seq(1,l.C)[Cost.vec==best.cost.parameter][1]
+plot(seq(1,l.C),Accuracy.CV[,1],type="b", xaxt='n', ylab="Tasa de acierto (10-CV)",xlab="Coste (C)")
+axis(side = 1, at = seq(1,l.C), labels = as.character(Cost.vec), tck = -0.01)
+points(index.best.Cost.CV,Accuracy.CV[index.best.Cost.CV,1], type="p",col="red",pch=19,cex=1.3)
+axis(side = 1, at = index.best.Cost.CV, labels = as.character(Cost.vec[index.best.Cost.CV]), tck = -0.01,lwd.ticks=3,col.ticks="red")
+legend("left",inset=0.03, legend=c("Max Tasa de acierto"),col="red",pch=19)
+```
+
+El siguiente paso es entrenar el SVM con el parametro coste que incrementa la tasa de acierto.
+
+```{r, warning=FALSE}
+svm10.lin.best <- svm(mpg01 ~ cylinders + weight + displacement + horsepower, data=datos9.train, kernel="linear", cost=best.cost.parameter, scale=FALSE) 
+```
+
+A continuación se calcula la tasa de acierto para el SVM con kernel lineal, con el valor del parametro coste que incrementa la tasa de acierto.
+
+```{r}
+truth.train=datos9.train$mpg01
+pred.train=predict(svm10.lin.best,datos9.train)
+table.train=table(pred.train,truth.train)
+
+Performance.train.SVM.blando=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+truth.test=datos9.test$mpg01
+pred.test=predict(svm10.lin.best,datos9.test)
+table.test=table(pred.test,truth.test)
+
+Performance.test.SVM.blando=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+Error.SVM.blando=rbind(cbind(Performance.train.SVM.blando$overall[1],Performance.test.SVM.blando$overall[1]),
+      cbind(Performance.train.SVM.blando$byClass,Performance.test.SVM.blando$byClass))
+colnames(Error.SVM.blando)=c("Train","Test")
+
+knitr::kable((Error.SVM.blando[c(1, 2, 8), ]), caption="Tabla 10.2. Resultados del modelo SVM lineal con parametro coste optimo calculado mediante validacion cruzada.")
+```
+
+Como se observa, la mejora en cuanto a tasa de acierto es elevada, llegando en el SVM optimo lineal al 89% de tasa de acierto.
+
+Tambien se considera interesante conocer la formula correspondiente al clasificador SVM con coste optimo. Para ello en la siguiente porcion de codigo se obtendran los coeficientes del hiperplano.
+
+```{r}
+beta = drop(t(svm10.lin.best$coefs)%*%svm10.lin.best$SV) 
+beta0 = -svm10.lin.best$rho           
+print(beta0)
+```
+
+```{r}
+knitr::kable(t(beta), caption="Tabla 10.3. Coeficientes del modelo SVM lineal.")
+```
+
+Por lo que la formula quedari de la siguiente manera:
+
+$$
+mpg01(cylinders, weight, displacement, horsepower) = 1 \quad si \quad \\
+-0.9528568*cylinders + 0.0000245*weight - 0.0009115*displacement -0.0005259*horsepower > 0.5
+$$
+
+$$
+mpg01(cylinders, weight, displacement, horsepower) = 0 \quad si \quad \\
+-0.9528568*cylinders + 0.0000245*weight - 0.0009115*displacement -0.0005259*horsepower < 0.5
+$$
+
+#### (b). Aplica SVM con el kernel radial con diferentes valores del para ́metro cost y del par ́ametro γ del kernel radial. Utiliza la validacion cruzada de 5 iteraciones para determinar el valor ́optimo de los par ́ametros y calcula el error de clasificacion en el conjunto test.
+
+De igual manera que en el apartado anterior, primero se va a entrenar un SVM con kernel radial con los parametros cost y γ con valores no optimos y posteriormente se van a comparar los resultados con los del SVM desarrollado con valores optimos.
+
+A continuacion se muestra la instanciación del primer SVM.
+
+```{r}
+svm10.rad.worst=svm(mpg01 ~ cylinders + weight + displacement + horsepower, data=datos9.train[folds!=k, ], kernel="radial", cost=30,gamma=3,scale=FALSE) 
+```
+
+De igual manera que en el apartado anterior, en la siguiente porcion de codigo se va a calcular la tasa de acierto que presenta, mostrada en la tabla, junto a la sensibilidad y el F1 score.
+
+```{r}
+truth.train=datos9.train$mpg01
+pred.train=predict(svm10.rad.worst,datos9.train)
+table.train=table(pred.train,truth.train)
+
+Performance.train.SVM.blando.radial=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+truth.test=datos9.test$mpg01
+pred.test=predict(svm10.rad.worst,datos9.test)
+table.test=table(pred.test,truth.test)
+
+Performance.test.SVM.blando.radial=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+Error.SVM.blando.radial=rbind(cbind(Performance.train.SVM.blando.radial$overall[1],Performance.test.SVM.blando.radial$overall[1]),
+      cbind(Performance.train.SVM.blando.radial$byClass,Performance.test.SVM.blando.radial$byClass))
+colnames(Error.SVM.blando.radial)=c("Train","Test")
+
+knitr::kable((Error.SVM.blando.radial[c(1, 2, 8), ]), caption="Tabla 10.4. Resultados del modelo SVM radial con parametro coste = 30 y gamma = 3.")
+```
+
+Ahora se va a desarrollar el SVM con parametros cost y γ con valores optimos, de igual manera que en el apartado anterior, el primer paso a realizar es el de obtener el mejor valor de la variable cost y de la variable γ, mediante la metrica de tasa de acierto.
+
+```{r}
+n=nrow(datos9.train)
+Cost.vec=c(0.001, 0.01, 0.1, 1, 5, 10)
+Gamma.vec=c(0.005,0.01,0.1,1,2,3,4)
+Parameter.mat=expand.grid(Cost.vec,Gamma.vec)
+l.p=nrow(Parameter.mat)
+k1=10      # número de folds
+Accuracy.CV.SVM.radial=matrix(rep(NA,l.p*2),ncol=2)
+set.seed(2)
+folds=sample(rep(1:k1,length=n))
+for (i in 1:l.p)
+{
+  cv.accuracy=rep(NA,k1)
+  for ( k in 1:k1)
+   {
+      model.cv.temp=svm(mpg01 ~ cylinders + weight + displacement + horsepower, data=datos9.train[folds!=k, ], kernel="radial", cost=Parameter.mat[i,1],gamma=Parameter.mat[i,2],scale=FALSE) 
+      pred=predict(model.cv.temp, datos9.train[folds==k,])
+      cv.accuracy[k]=confusionMatrix(pred, datos9.train[folds==k,]$mpg01, positive="1",mode="everything")$overall[1]
+   }
+Accuracy.CV.SVM.radial[i,]=c(mean(cv.accuracy),sd(cv.accuracy))
+}
+RESULTS.CV.SVM.radial=cbind(Parameter.mat,Accuracy.CV.SVM.radial)
+colnames(RESULTS.CV.SVM.radial)=c("Coste (C)", "gamma", "Tasa de acierto","Sd")
+```
+
+A continuacion se muestran los mejores valores para el parametro cost y γ.
+
+```{r}
+best.parameters=Parameter.mat[Accuracy.CV.SVM.radial[,1]==max(Accuracy.CV.SVM.radial[,1]),][1,]
+colnames(best.parameters) <- c("cost", "γ")
+knitr::kable(best.parameters, caption="Tabla 10.5. Parametros coste y gamma del SVM radial calculados mediante validacion cruzada.")
+```
+
+Una vez obtenidos los parametros optimos, se entrena el SVM y se obtienen los resultados de la tasa de acierto que presenta, la sensibilidad y el F1 score.
+
+```{r}
+svm10.rad.best=svm(mpg01 ~ cylinders + weight + displacement + horsepower, data=datos9.train[folds!=k, ], kernel="radial", cost=best.parameters[1],gamma=best.parameters[2],scale=FALSE) 
+```
+
+```{r}
+truth.train=datos9.train$mpg01
+pred.train=predict(svm10.rad.best,datos9.train)
+table.train=table(pred.train,truth.train)
+
+Performance.train.SVM.blando.radial=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+
+truth.test=datos9.test$mpg01
+pred.test=predict(svm10.rad.best,datos9.test)
+table.test=table(pred.test,truth.test)
+
+Performance.test.SVM.blando.radial=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+
+Error.SVM.blando.radial=rbind(cbind(Performance.train.SVM.blando.radial$overall[1],Performance.test.SVM.blando.radial$overall[1]),
+      cbind(Performance.train.SVM.blando.radial$byClass,Performance.test.SVM.blando.radial$byClass))
+colnames(Error.SVM.blando.radial)=c("Train","Test")
+
+knitr::kable((Error.SVM.blando.radial[c(1, 2, 8), ]), caption="Tabla 10.6. Resultados del modelo SVM radial con parametro coste y gamma optimos calculados mediante validacion cruzada.")
+```
+
+En la tabla anterior se observa una mejora considerable, el SVM entrenado con los parametros optimos tiene un 82% tasa de acierto en la clasificacion, frente al 47% del primer SVM.
+
+#### (c). Teniendo en cuenta los resultados anteriores y los resultados de los apartados (f) y (h) del ejercicio 9 ¿ Cual de los cuatro clasificadores utilizar ́ıas para realizar predicciones?
+
+Se va a elegir el clasificador que mayor tasa de acierto proporcione de entre los desarrollados en los ejercicios 9 y 10. Para ello se muestran los resultados en la siguiente tabla.
+
+```{r}
+datos <- data.frame(
+  Modelo = c("Regr logistica", "KNN1", "KNN2", "KNN3", "KNN5", "KNN7", "KNN9", "KNN10", "KNN13", "SVM.LIN.WORST", "SVM.LIN.BEST", "SVM.RAD.WORST", "SVM.RAD.BEST"),
+  Tasa_Acierto = c(0.89796, 0.8571429, 0.8571429, 0.8775510, 0.8673469, 0.8673469, 0.8469388, 0.8469388, 0.8469388, 0.8571429, 0.8877551, 0.4693878, 0.8163265)
+)
+
+knitr::kable(datos, caption="Tabla 10.7. Resultados de los modelos desarrollados en los ejercicios 9 y 10.")
+```
+
+Por lo que para realizar predicciones de la variable mpg01 con mayor precision, se deberia elegir el modelo de regresión logistica desarrollado en el apartado 9, seguido del modelo SVM lineal y el modelo KNN con k = 3.

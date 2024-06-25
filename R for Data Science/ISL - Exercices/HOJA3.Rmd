@@ -1,0 +1,977 @@
+---
+title: |
+  Soluciones Hoja3
+author: |
+  Stefan Rada
+subtitle: |
+  Aprendizaje estadístico (43455)
+   Curso 2023/2024
+output: 
+  pdf_document:
+    latex_engine: xelatex
+  html_document: default
+---
+
+```{r, include=FALSE}
+require("boot")
+#require("dplyr")        
+require("corrplot")
+require("leaps")        
+require("glmnet")       
+require("lars")
+require("ISLR")
+require("ISLR2")
+#source("PlotFunctions.R")
+require("e1071") 
+require("caret") 
+require("nnet")
+```
+
+<br>
+
+### Ejercicio 1 (9.7.2 ISL)
+
+#### We have seen that in p = 2 dimensions, a linear decision boundary takes the form $β_0 +β_1X_1 +β_2X_2 = 0$. We now investigate a non-linear decision boundary.
+
+#### (a) Sketch the curve $(1+X_1)^2 +(2−X_2)^2 =4$.
+
+Esta formula define un circulo con centro en el punto (-1, 2) y radio 2.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 1.1. Gráfico de la curva establecida por la formula."}
+
+radio = 2
+plot(NA, NA, type = "n", xlim = c(-4, 2), ylim = c(-1, 5), asp = 1, xlab = "X1", ylab = "X2")
+symbols(c(-1), c(2), circles = c(radio), add = TRUE, inches = FALSE)
+```
+
+#### (b) On your sketch, indicate the set of points for which $(1+X_1)^2 +(2−X_2)^2 >4$, as well as the set of points for which $(1+X_1)^2 +(2−X_2)^2 ≤4$.
+
+Los puntos que estan en el interior de la circumferencia son los que son menores que 4, y los que se encuentran fuera son mayores que 4. Para indicarlo se añadirán etiquetas de texto.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 1.2. Gráfico de la curva establecida por la formula y etiquetas que designan valores mayores y menores que 4."}
+
+radio = 2
+plot(NA, NA, type = "n", xlim = c(-4, 2), ylim = c(-1, 5), asp = 1, xlab = "X1", ylab = "X2")
+symbols(c(-1), c(2), circles = c(radio), add = TRUE, inches = FALSE)
+text(c(-1), c(2), "< 4")
+text(c(4), c(2), "> 4")
+text(c(-6), c(2), "> 4")
+```
+
+#### (c) Suppose that a classifier assigns an observation to the blue class if $(1+X_1)^2 +(2−X_2)^2 >4$, and to the red class otherwise. To what class is the observation (0, 0) classified? (−1, 1)? (2, 2)? (3, 8)?
+
+Para hacer la clasificación de los puntos unicamente se debe comprobar si la sustitución de los puntos en la formula es \< o \> que 4.
+
+Para el punto (0, 0): $(1+0)^2 + (2-0)^2 = 5 > 4$, por lo que se clasifica como punto azul.
+
+Para el punto (-1, 1): $(1-1)^2 + (2-1)^2 = 1 < 4$, por lo que se clasifica como punto rojo.
+
+Para el punto (2, 2): $(1+2)^2 + (2-2)^2 = 9 > 4$, por lo que se clasifica como punto azul.
+
+Para el punto (3, 8): $(1+3)^2 + (2-8)^2 = 52 > 4$, por lo que se clasifica como punto azul.
+
+En el código mostrado a continuación se añaden estos puntos en el gráfico.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 1.3. Gráfico de la curva establecida por la formula y los 4 puntos clasificados."}
+
+plot(c(0, -1, 2, 3), c(0, 1, 2, 8), col = c("blue", "red", "blue", "blue"), type = "p", asp = 1, xlab = "X1", ylab = "X2")
+symbols(c(-1), c(2), circles = c(radio), add = TRUE, inches = FALSE)
+```
+
+#### (d) Argue that while the decision boundary in (c) is not linear in terms of $X_1$ and $X_2$, it is linear in terms of $X_1$, $X_1^2$, $X_2$, and $X_2^2$ .
+
+Si se expanden los cuadrados de la ecuación $(1+X_1)^2 +(2−X_2)^2 =4$ se obtiene la ecuación $1+X_1 + X_1 + X_1^2 + 4 -2X_2 -2X_2 + X_2^2 = 4$ que se simplifica a $2X_1 + X_1^2 - 4X_2 + X_2^2 + 1 = 0$, la cual es lineal en términos de $X_1$, $X_1^2$, $X_2$, y $X_2^2$ .
+
+Por lo que se concluye que la frontera de decision del apartado (c) es lineal en terminos de $X_1$, $X_1^2$, $X_2$, y $X_2^2$ .
+
+<br>
+
+<br>
+
+### Ejercicio 2 (9.7.5 ISL)
+
+#### We have seen that we can fit an SVM with a non-linear kernel in order to perform classification using a non-linear decision boundary. We will now see that we can also obtain a non-linear decision boundary by performing logistic regression using non-linear transformations of the features.
+
+#### (a) Generate a data set with $n = 500$ and $p = 2$, such that the observations belong to two classes with a quadratic decision boundary between them. For instance, you can do this as follows:
+
+A continuación se ejecuta el código para crear las 500 observaciones con dos variables.
+
+```{r}
+set.seed(1)
+
+x1 <- runif (500) - 0.5
+x2 <- runif (500) - 0.5
+y <- 1 * (x1^2 - x2^2 > 0)
+```
+
+#### (b) Plot the observations, colored according to their class labels. Your plot should display $X_1$ on the x-axis, and $X_2$ on the y-axis.
+
+Como $y$ solo tiene valores 1 o 0, se ha creado un vector colores en el que si la variable $y=0$ se representa la observación en color azul y si $y = 1$ se representa en color rojo.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 2.1. Gráfico de observaciones clasificadas por colores según la clase a la que pertenecen."}
+
+colores <- ifelse(y == 0, "blue", "red")
+plot(x1, x2, col = colores, xlab = "X1", ylab = "X2")
+```
+
+Se observa en el grafico como los valores no son separables por una frontera de decision lineal.
+
+#### (c) Fit a logistic regression model to the data, using $X_1$ and $X_2$ as predictors.
+
+En el codigo mostrado a continuacion se entrena un modelo de regresion logistica y se muestran sus caracteristicas.
+
+```{r}
+modelo2 <- glm(y ~ x1 + x2, family = "binomial")
+summary(modelo2)
+```
+
+#### (d) Apply this model to the training data in order to obtain a predicted class label for each training observation. Plot the observations, colored according to the predicted class labels. The decision boundary should be linear.
+
+En el codigo mostrado a continuacion se pasan los datos a formato dataframe para poder realizar predicciones sobre ellos, posteriormente se calculan las probabilidades y se clasifica a la clase 1 si la probabilidad es \> 0.5 y a la clase 0 de lo contrario.
+
+```{r}
+datos2 <- data.frame(x1 = x1, x2 = x2, y = y)
+probabilidades <- predict(modelo2, datos2, type = "response")
+predicciones <- ifelse(probabilidades > 0.5, 1, 0)
+```
+
+En el siguiente grafico se muestra la prediccion de las clases a las que pertenecen las diferentes observaciones.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 2.2. Gráfico de predicciones del modelo de regresion logistica lineal clasificadas por colores según la clase a la que pertenecen."}
+
+colores.predicciones <- ifelse(predicciones == 0, "blue", "red")
+plot(x1, x2, col = colores.predicciones, xlab = "X1", ylab = "X2")
+```
+
+Como se observa, la frontera de decision creada por el modelo es lineal pero los datos no son linealmente separables, por esa razon las predicciones estan muy alejadas de los datos reales.
+
+#### (e) Now fit a logistic regression model to the data using non-linear functions of $X_1$ and $X_2$ as predictors (e.g. $X_1^2$, $X1 ×X2$, $log(X_2)$, and so forth).
+
+El modelo no lineal entrenado va a ser el modelo ajustado con los predictores $X_1^2$ y $X_2^2$ ya que la variable respuesta $y$ viene dada por los cuadrados de los predictores.
+
+```{r}
+modelo2.e <- glm(y ~ I(x1^2) + I(x2^2), family = "binomial")
+summary(modelo2.e)
+```
+
+#### (f) Apply this model to the training data in order to obtain a predicted class label for each training observation. Plot the observations, colored according to the predicted class labels. The decision boundary should be obviously non-linear. If it is not, then repeat (a)-(e) until you come up with an example in which the predicted class labels are obviously non-linear.
+
+A continuación, de la misma forma que en el apartado (d), se han pasado los datos a formato dataframe, se han realizado predicciones sobre ellos con el modelo no lineal y se ha generado el gráfico.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 2.3. Gráfico de predicciones del modelo creado en el apartado (e) clasificadas por colores según la clase a la que pertenecen."}
+
+datos2.e <- data.frame(x1 = x1, x2 = x2, y = y)
+probabilidades.e <- predict(modelo2.e, datos2.e, type = "response")
+predicciones.e <- ifelse(probabilidades.e > 0.5, 1, 0)
+
+colores.predicciones.e <- ifelse(predicciones.e == 0, "blue", "red")
+plot(x1, x2, col = colores.predicciones.e, xlab = "X1", ylab = "X2")
+```
+
+Como vemos este modelo es muy acertado y no ofrece una frontera de decision lineal, se acerca a la frontera del modelo real. Esto se debe a que la formula de la variable respuesta $y$ esta definida con los predictores elevados al cuadrado.
+
+#### (g) Fit a support vector classifier to the data with $X_1$ and $X_2$ as predictors. Obtain a class prediction for each training observation. Plot the observations, colored according to the predicted class labels.
+
+Para aplicar SVM, se debe definir la variable respuesta como un factor, esto se realiza en el codigo mostrado a continuacion.
+
+```{r}
+datos2$y <- as.factor(datos2$y)
+```
+
+El siguiente paso es crear el SVM, en este caso se le ha asignado un coste muy bajo, para definirlo como margen blando.
+
+```{r}
+svm.g <- svm(y ~ x1 + x2, datos2, kernel = "linear", cost = 0.01) 
+```
+
+En el codigo mostrado a continuación se realizan las predicciones y se dibuja el grafico correspondiente.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 2.4. Gráfico de predicciones del modelo creado en el apartado (g) clasificadas por colores según la clase a la que pertenecen."}
+
+probabilidades.g <- predict(svm.g, datos2)
+predicciones.g <- ifelse(probabilidades.g == "1", 1, 0)
+
+colores.predicciones.g <- ifelse(predicciones.g == 0, "blue", "red")
+plot(x1, x2, col = colores.predicciones.g, xlab = "X1", ylab = "X2")
+```
+
+Como se observa en el grafico, el SVM creado, aun teniendo un coste muy bajo, clasifica todas las observaciones a una unica clase, la clase 0, por lo que no es un modelo de prediccion útil ni acertado.
+
+#### (h) Fit a SVM using a non-linear kernel to the data. Obtain a class prediction for each training observation. Plot the observations, colored according to the predicted class labels.
+
+En este apartado se pide crear un nuevo SVM pero esta vez no lineal, y observar la clasificacion que realiza de manera visual.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 2.5. Gráfico de predicciones del modelo creado en el apartado (h) clasificadas por colores según la clase a la que pertenecen."}
+svm.h <- svm(y ~ x1 + x2, datos2, kernel = "radial", gamma = 1) 
+
+probabilidades.h <- predict(svm.h, datos2)
+predicciones.h <- ifelse(probabilidades.h == "1", "1", "0")
+
+colores.predicciones.h <- ifelse(predicciones.h == "0", "blue", "red")
+plot(x1, x2, col = colores.predicciones.h, xlab = "X1", ylab = "X2")
+```
+
+Como se observa, este modelo realiza predicciones mucho mas precisas que el SVM lineal.
+
+#### (i) Comment on your results.
+
+En la siguiente figura se muestra un resumen de las predicciones de todos los modelos creados
+
+```{r, fig.width = 7,fig.height = 7, fig.cap="Figura 2.6. Resumen de los gráficos de predicciones creados."}
+
+par(mfrow=c(3,2))
+plot(x1, x2, col = colores, xlab = "X1", ylab = "X2", main = "Observaciones del modelo real (2.1)")
+plot(x1, x2, col = colores.predicciones, xlab = "X1", ylab = "X2", main = "Predicciones del modelo de regresion logistica (2.2)")
+plot(x1, x2, col = colores.predicciones.e, xlab = "X1", ylab = "X2", main = "Predicciones del modelo no lineal (2.3)")
+plot(x1, x2, col = colores.predicciones.g, xlab = "X1", ylab = "X2", main = "Predicciones del modelo SVM lineal (2.4)")
+plot(x1, x2, col = colores.predicciones.h, xlab = "X1", ylab = "X2", main = "Predicciones del modelo SVM no lineal (2.5)")
+```
+
+A lo largo de este ejercicio se han creado varios modelos de clasificación, pero no todos ellos han resultado igual de precisos.
+
+Como se observa al comparar con el grafico de observaciones del modelo real, unicamente el modelo no lineal ajustado con los predictores al cuadrado y el modelo SVM con kernel radial han obtenido fronteras de decision precisas.
+
+Se puede concluir que los demas modelos lineales (modelos de regresion logistica y SVM lineal) no son de utilidad a la hora de clasificar datos no separables linealmente.
+
+<br>
+
+<br>
+
+### Ejercicio 3 (9.7.6 ISL)
+
+#### At the end of Section 9.6.1, it is claimed that in the case of data that is just barely linearly separable, a support vector classifier with a small value of cost that misclassifies a couple of training observations may perform better on test data than one with a huge value of cost that does not misclassify any training observations. You will now investigate this claim.
+
+#### (a) Generate two-class data with $p = 2$ in such a way that the classes are just barely linearly separable.
+
+En este codigo se generan 100 puntos, 50 para cada clase, mediante distribuciones uniformes y se muestran en el grafico.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 3.1. Gráfico de los datos generados, con p=2 caracteristicas y divididos en dos clases."}
+
+set.seed(1)
+
+#Clase 1
+x.uno <- runif(1000, 0, 90)
+y.uno <- runif(1000, x.uno, 100)
+
+#Clase 0
+x.cero <- runif(1000, 10, 100)
+y.cero <- runif(1000, 0, x.cero)
+
+#Etiquetas
+primera.clase <- seq(1, 1000)
+
+x <- c(x.uno, x.cero)
+y <- c(y.uno, y.cero)
+
+plot(x[primera.clase], y[primera.clase], col = "blue", pch = 4, ylim = c(0, 100))
+points(x[-primera.clase], y[-primera.clase], col = "red", pch = 4)
+
+```
+
+#### (b) Compute the cross-validation error rates for support vector classifiers with a range of cost values. How many training observations are misclassified for each value of cost considered, and how does this relate to the cross-validation errors obtained?
+
+A continuación se ajustan los datos a los requerimientos del enunciado. Se crea un dataframe con los puntos y una nueva columna llamada clase, en la que se almacena la clase del punto (la primera mitad de los datos son de la primera clase).
+
+```{r}
+clase <- rep(0, 2000)
+clase[primera.clase] <- 1
+```
+
+El objetivo de este apartado es el de confirmar que un clasificador SVM con un pequeño valor de coste, que clasifica mal algunas observaciones, puede obtener mejores resultados que uno que dispone de un valor de coste alto. Para demostrar esta hipotesis, se añadirán dos observaciones de cada clase en el area de la clase contraria, de este modo los datos no serán linealmente separables.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 3.2. Gráfico de los datos generados y las observaciones erroneas destacadas."}
+
+observacion.mala.1 <- c(30, 60, 0)
+observacion.mala.2 <- c(65, 20, 1)
+
+plot(x[primera.clase], y[primera.clase], col = "blue", pch = 4, ylim = c(0, 100))
+points(x[-primera.clase], y[-primera.clase], col = "red", pch = 4)
+points(observacion.mala.1[1], observacion.mala.1[2], col = "green", pch = 16) 
+points(observacion.mala.2[1], observacion.mala.2[2], col = "green", pch = 16)
+```
+
+A continuación se añaden las observaciones al dataframe.
+
+```{r}
+x <- c(x, observacion.mala.1[1], observacion.mala.2[1])
+y <- c(y, observacion.mala.1[2], observacion.mala.2[2])
+clase <- c(clase, observacion.mala.1[3], observacion.mala.2[3])
+
+datos3 <- data.frame(x = x, y = y, clase = as.factor(clase))
+```
+
+En el codigo mostrado a continuación se calculan las tasas de error para el clasificador con diferentes valores de la variable coste.
+
+```{r, warning=FALSE}
+
+n=nrow(datos3)
+Cost.vec=c(0.001, 0.01, 0.1, 1, 5, 10, 100, 1000)
+l.C=length(Cost.vec)
+k1=10      # número de folds
+Accuracy.CV=matrix(rep(NA,l.C*2),ncol=2)
+set.seed(4)
+ folds=sample(rep(1:k1,length=n))
+  for (c in 1:l.C)
+  {
+  cv.accuracy=rep(NA,k1)
+  for ( k in 1:k1)
+   {
+      model.cv.temp=svm(clase~., data=datos3[folds!=k, ], kernel="linear", cost=Cost.vec[c],scale=FALSE) 
+      pred=predict(model.cv.temp, datos3[folds==k,])
+      cv.accuracy[k]=confusionMatrix(pred, datos3[folds==k,]$clase, positive="1",mode="everything")$overall[1]
+   }
+Accuracy.CV[c,]=c(mean( cv.accuracy),sd(cv.accuracy))
+}
+RESULTS.CV=cbind(Cost.vec,Accuracy.CV)
+colnames(RESULTS.CV)=c("Coste (C)","Tasa de acierto","Sd")
+
+knitr::kable((RESULTS.CV), caption="Tabla 3.1. Tasa de acierto y desviación para los distintos valores de coste del SVM.")
+```
+
+Como se observa en la tabla, la mayor tasa de acierto la tiene el SVM con coste 0.1 (mismo resultado que los SVM con coste 1, 5, 10), mas precision que el SVM con coste 1000, por lo que se confirma la teoria planteada en el enunciado del ejercicio.
+
+#### (c) Generate an appropriate test data set, and compute the test errors corresponding to each of the values of cost considered. Which value of cost leads to the fewest test errors, and how does this compare to the values of cost that yield the fewest training errors and the fewest cross-validation errors?
+
+Para calcular el error de test se van a comparar 3 SVM diferentes y se interpretarán los resultados de sus matrices de confusion.
+
+```{r, warning=FALSE}
+set.seed(1)
+
+indices <- sample(1:nrow(datos3), floor(0.33 * nrow(datos3)))
+
+datos3.test <- datos3[indices, ]
+datos3.train <- datos3[-indices, ]
+
+svmfit1 = svm(clase~., data=datos3.train, kernel="linear", cost=0.001, scale=FALSE)  
+svmfit2 = svm(clase~., data=datos3.train, kernel="linear", cost=0.1, scale=FALSE)  
+svmfit3 = svm(clase~., data=datos3.train, kernel="linear", cost=1000, scale=FALSE) 
+```
+
+```{r}
+pred1=predict(svmfit1, datos3.test)
+confusionMatrix(pred1, datos3.test$clase,mode="everything",positive="1")
+```
+
+```{r}
+pred2=predict(svmfit2, datos3.test)
+confusionMatrix(pred2, datos3.test$clase,mode="everything",positive="1")
+```
+
+```{r}
+pred2=predict(svmfit2, datos3.test)
+confusionMatrix(pred2, datos3.test$clase,mode="everything",positive="1")
+```
+
+#### (d) Discuss your results.
+
+En el apartado (b) se ha observado que la teoria planteada en el enunciado es cierta: un clasificador SVM con un pequeño valor de coste, que clasifica mal algunas observaciones, puede obtener mejores resultados que uno que dispone de un valor de coste alto. En este apartado el SVM entrenado con la totalidad de los datos que mayor precision ha obtenido ha sido el ajustado con un valor de coste de 0.1.
+
+Por el otro lado, en el apartado (c), al definir un conjunto de datos de validación y entrenamiento, los SVMs obtienen resultados parecidos, teniendo los SVM con coste 0.1 y 1000 que obtienen la misma tasa de acierto, hecho que tambien verifica la teoria planteada en el enunciado.
+
+Por ultimo cabe comentar que para obtener resultados mas claros, se deberia haber añadido muchas mas observaciones mal clasificadas (ruido) no unicamente una de cada clase, es decir desde el inicio del ejercicio el conjunto de datos no ha sido el adecuado para confirmar esta teoria.
+
+<br>
+
+<br>
+
+### Ejercicio 4
+
+Escribir una funcion que implemente la regresion logıstica para el caso multiclase usando el metodo uno contra uno (pagina 151 de los apuntes del Tema 4). Los parametros de entrada de la funcion seran:
+
+\- D.train: Conjunto de datos de entrenamiento
+
+\- D.test: Conjunto de datos de prueba
+
+\- y.name: Nombre de la variable respuesta
+
+La funcion tendra como salida una lista que contiene:
+
+(i) un vector con la clase asignada por el clasificador a cada individuo en D.train.
+
+(ii) un vector con la clase asignada por el clasificador a cada individuo en D.test.
+
+(iii) la tasa de acierto del clasificador en D.train.
+
+(iv) la tasa de acierto en D.test.
+
+Aplicar la funcion al Ejemplo Ejercicio4 que se encuentra en la carpeta de la HOJA 3 de ejercicios. El ejemplo se refiere a un problema de clasificacion multiclase con dos variables explicativas (X1 y X2) y una variable respuesta (class) con tres clases (A, B y C).
+
+• El fichero trainEx4.txt (matriz 300 × 3) contiene los datos de entrenamiento (con 300 observaciones).
+
+• El fichero testEx4.txt (matriz 200 × 3) contiene los datos de prueba (con 200 observaciones).
+
+Al aplicar la funcion SOLO mostrar los resultados relativos a la tasa de acierto en D.train y en D.test.
+
+<br>
+
+En el codigo mostrado a continuación se cargan los conjuntos de datos.
+
+```{r}
+datos4.test <- read.table("testEx4.txt")
+datos4.train <- read.table("trainEx4.txt")
+```
+
+A continuación se implementa la función.
+
+```{r}
+regresion_logistica_multiclase <- function(D.train, D.test, y.name) {
+
+  clases <- unique(D.train[, y.name])
+  clases.n <- length(clases)
+  
+  # Todas las combinaciones posibles de 2 clases
+  subproblemas <- combn(clases, 2) 
+  
+  predicciones_train <- rep(NA, nrow(D.train))
+  predicciones_test <- rep(NA, nrow(D.test))
+
+  for (i in 1:ncol(subproblemas)) {
+    clase1 <- subproblemas[1, i]
+    clase2 <- subproblemas[2, i]
+    
+    # Filtrar datos para el subproblema actual
+    train_subset <- D.train[D.train[, y.name] %in% c(clase1, clase2), ]
+    test_subset <- D.test[D.test[, y.name] %in% c(clase1, clase2), ]
+    
+    # Entrenar el modelo
+    formula <- paste(y.name, "~ .")
+    model <- multinom(formula, data = train_subset)
+    
+    # Predecir para conjunto de entrenamiento
+    pred_train <- predict(model, newdata = D.train, type = "class")
+    predicciones_train[D.train[, y.name] %in% c(clase1, clase2)] <- as.character(pred_train)
+    
+    # Predecir para conjunto de prueba
+    pred_test <- predict(model, newdata = D.test, type = "class")
+    predicciones_test[D.test[, y.name] %in% c(clase1, clase2)] <- as.character(pred_test)
+  }
+
+  train_accuracy <- sum(predicciones_train == D.train[, y.name]) / nrow(D.train)
+  test_accuracy <- sum(predicciones_test == D.test[, y.name]) / nrow(D.test)
+
+  resultados <- list(predicciones_train = predicciones_train, predicciones_test = predicciones_test, 
+                      train_accuracy = train_accuracy, test_accuracy = test_accuracy)
+  return(resultados)
+}
+```
+
+Por ultimo se aplica la funcion a los conjuntos de datos cargados y se muestra en una tabla las tasas de acierto.
+
+```{r, warning=FALSE}
+
+resultados <- regresion_logistica_multiclase(D.train = datos4.train, D.test = datos4.test, y.name = "class")
+
+resultados.tab <- cbind("Conjunto" = c("Entrenamiento", "Test"),
+                            "Tasa de Acierto" = c(resultados$train_accuracy, resultados$test_accuracy))
+
+knitr::kable(resultados.tab, caption = "Tabla 4.1. Tasa de acierto en los conjuntos de entrenamiento y test.", digits = 2)
+
+```
+
+<br>
+
+<br>
+
+### Ejercicio 5
+
+#### El conjunto de datos denominado USJudgeRatings contiene la valoracion que 43 jueces estatales del Tribunal Superior de EEUU. han obtenido de los abogados con los que trabajan, sobre aspectos medidos a traves de 12 variables que puedes consultar en la ayuda: ?USJudgeRatings. Se pretende resumir la informacion disponible aplicando un Analisis de Componentes Principales con 2 ejes.
+
+```{r}
+datos5 <- USJudgeRatings
+
+top_Data <- head(datos5)
+
+knitr::kable(top_Data, caption="Tabla 5.1. Seis primeras filas del dataset USJudgeRatings")
+```
+
+Como se observa, se trata de un dataset de 43 observaciones (jueces) y 12 variables, sin ninguna variable respuesta, por lo que se realizará un analisis de componentes principales para resumir y analizar la información que presenta el conjunto de datos.
+
+#### (a) ¿Que varianza explica cada una de las componentes seleccionadas?
+
+```{r}
+pca <- prcomp(datos5, scale. = TRUE, center = TRUE)
+```
+
+```{r}
+Var.expl=pca$sdev^2                 # varianza explicada por cada componente
+PVE=100*Var.expl/sum(Var.expl)      # % de varianza explicada por cada componente
+APVE=cumsum(PVE)                    # proporción de varianza explicada acumulada
+Var.Exp.mat=cbind(Var.expl,PVE,APVE )
+colnames(Var.Exp.mat)=c("Varianza explicada", "% Varianza explicada", "% acumulado de varianza explicada")
+knitr::kable(Var.Exp.mat, caption="Tabla 5.2. Varianza explicada por las componentes principales.",digits=2)
+```
+
+En la tabla anterior, se muestra la varianza explicada por cada componente del analisis, como se observa, con los 5 primeros componentes se puede explicar el 99% de la varianza total del analisis.
+
+#### (b) A partir del screeplot, ¿cuantas componentes habrias escogido?
+
+En el codigo mostrado a continuación se genera el grafico de sedimentación y el grafico con el porcentaje de varianza acumulada para las 12 componentes principales del analisis.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 5.1. Gráfico de sedimentación (a) y % Acumulado de varianza explicada (b)."}
+
+par(mfrow=c(1,2))
+plot(Var.expl,xlab="Componente principal",ylab="Varianza explicada",type="b",main="(a)",xaxt='n')
+axis(side=1,at=c(1,2,3,4,5,6,7,8,9,10,11,12),labels = c("PC1","PC2","PC3","PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10", "PC11", "PC12"))
+plot(cumsum(PVE),xlab="Componente principal",ylab="% acumulado de varianza explicada",ylim=c(40,100),type="b",main="(b)",xaxt='n')
+axis(side=1,at=c(1,2,3,4,5,6,7,8,9,10,11,12),labels = c("PC1","PC2","PC3","PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10", "PC11", "PC12"))
+```
+
+Es complicado aplicar la regla del codo a este gráfico, ya que la perdida de información puede considerarse mínima en muchos casos, por ejemplo al llegar al tercer componente o al sexto, ya que sigue habiendo perdida de información.
+
+Para una buena eleccion del numero de componentes a escoger se deberian aplicar criterios adicionales.
+
+Como respuesta a la pregunta planteada en el enunciado, personalmente escogeria los tres primeros componentes.
+
+#### (c) Interpreta el significado de las nuevas variables.
+
+Para interpretar el significado de las nuevas variables, el primer paso es calcular la correlación entre las componentes principales y las variables originales. En el código mostrado a continuación se muestra la tbla con las correlaciones.
+
+```{r}
+scores.mat=pca$x
+
+Interpretation.mat=cor(datos5,scores.mat)
+knitr::kable(Interpretation.mat, caption="Tabla 5.3. Correlación entre las componentes principales y las variables originales .",digits=2)
+```
+
+El siguiente paso es generar la tabla con los vectores de loadings de los nuevos componentes principales.
+
+```{r}
+NewLoadings.mat=-pca$rotation
+knitr::kable(NewLoadings.mat, caption="Tabla 5.4. Vectores de loadings de las 'nuevas' componentes principales.",digits=2)
+```
+
+A continuación se muestra la matriz de correlación entre las “nuevas” componentes principales y las variables originales
+
+```{r}
+Newscores.mat=-scores.mat
+NewInterpretation.mat=cor(datos5,Newscores.mat)
+knitr::kable(Interpretation.mat, caption="Tabla 5.5. Correlación entre las componentes principales y las variables originales .",digits=2)
+```
+
+Finalmente, se muestra el grafico con las correlaciones.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 5.2. Correlación entre las vraiables originales y las primeras tres componentes principales."}
+
+par(mfrow=c(2,2))
+barplot(NewInterpretation.mat[,1],main="Correlación de las V.O. con PC1",horiz = FALSE,ylim=c(-0.5,1))
+barplot(NewInterpretation.mat[,2],main="Correlación de las V.O. con PC2",horiz = FALSE,ylim=c(-1,0.5))
+barplot(NewInterpretation.mat[,3],main="Correlación de las V.O. con PC3",horiz = FALSE,ylim=c(-0.5,0.5))
+```
+
+La interpretación de los resultados es compleja de interpretar ya que las variables contienen valoraciones de temas judiciales.
+
+Pero en la primera componente se observa como menos la primera, todas las variables son correlacionadas positivas, por lo que indica que el primer componente principal es un promedio de las valoraciones del juez para cada variable.
+
+La segunda y tercera componente principal obtienen correlaciones positivas y negativas con las variables originales, pero con un valor reducido, por lo que sin un conocimiento de las variables judiciales tratadas no se pueden obtener conclusiones acertadas.
+
+#### (d) Segun la interpretaci on obtenida en el apartado anterior y observando el biplot, comenta como han sido valorados COHEN y LEVISTER.
+
+En el codigo mostrado a continuación se muestra el biplot resultante del analisis de componentes principales, en el que se destaca a los dos jueces.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 5.3. Gráfico biplot con las variables originales tipificadas."}
+
+scores.mat=-pca$x
+Loadings.mat=pca$rotation
+
+s.2=summary(pca)
+
+# Indices de los datos de Cohen y Levistar para destacarlos en el biplot
+indices <- c(8, 20)
+colores_destacados <- ifelse(1:nrow(scores.mat) %in% indices, "red", "black")
+
+plot(scores.mat[,1], scores.mat[,2], xlab=paste("PCA 1 (", round(s.2$importance[2]*100, 1), "%)", sep = ""), ylab=paste("PCA 2 (", round(s.2$importance[5]*100, 1), "%)", sep = ""), cex=1, col=colores_destacados)
+abline(v=0, lty=2, col="grey50")
+abline(h=0, lty=2, col="grey50")
+text(scores.mat[,1], scores.mat[,2], labels=row.names(scores.mat), pos=c(1,3,4,2), font=2, cex=0.6, col=colores_destacados)
+l.x <- Loadings.mat[,1]
+l.y <- Loadings.mat[,2]
+l.pos <- l.y 
+lo <- which(l.y < 0) 
+hi <- which(l.y > 0) 
+l.pos <- replace(l.pos, lo, "1")
+l.pos <- replace(l.pos, hi, "3")
+```
+
+Como se puede observar en el grafico resultante, los dos jueces destacados se encuentran alejados del centro del grafico, en el que se encuentran la mayoria de los jueces.
+
+Este suceso indica que los jueces han obtenido valoraciones negativas, en comparación con el resto, en la mayoria de variables de las que se ha recolectado información.
+
+<br>
+
+<br>
+
+### Ejercicio 6 (12.6.2 ISL)
+
+#### Suppose that we have four observations, for which we compute a dissimilarity matrix, given by
+
+![](images/clipboard-3933303000.png){width="210"}
+
+#### For instance, the dissimilarity between the first and second observations is 0.3, and the dissimilarity between the second and fourth observations is 0.8.
+
+#### (a) On the basis of this dissimilarity matrix, sketch the dendrogram that results from hierarchically clustering these four observations using complete linkage. Be sure to indicate on the plot the height at which each fusion occurs, as well as the observations corresponding to each leaf in the dendrogram.
+
+A continuación se define la matriz de disimilitud anterior y se grafica el dendrograma de esta, aplicando complete linkage (vinculación completa).
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 6.1. Dendrograma jerarquico de las cuatro observaciones de la matriz de disimilitud, utilizando la vinculación completa."}
+
+matriz.disimilitud = as.dist(matrix(c(0, 0.3, 0.4, 0.7, 
+                                      0.3, 0, 0.5, 0.8,
+                                      0.4, 0.5, 0.0, 0.45,
+                                      0.7, 0.8, 0.45, 0.0), nrow=4))
+
+plot(hclust(matriz.disimilitud, method="complete"))
+```
+
+Como se observa, se crean dos grupos, el primero contiene las observaciones 1 y 2, y el segundo las observaciones 3 y 4.
+
+#### (b) Repeat (a), this time using single linkage clustering.
+
+A continuación se grafica otro dendrograma, esta vez aplicando single linkage (vinculación individual).
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 6.2. Dendrograma jerarquico de las cuatro observaciones de la matriz de disimilitud, utilizando la vinculación individual."}
+
+plot(hclust(matriz.disimilitud, method="single"))
+```
+
+Como se observa al comparar ambos dendrogramas, las distintas estrategias dan como solucion diferentes maneras de clasificar en clusters.
+
+#### (c) Suppose that we cut the dendrogram obtained in (a) such that two clusters result. Which observations are in each cluster?
+
+Las observaciones del primer cluster serían la 1 y la 2.
+
+Las observaciones del segundo cluster serían la 3 y la 4.
+
+Por lo que tendriamos los clusters (1, 2) y (3, 4).
+
+#### (d) Suppose that we cut the dendrogram obtained in (b) such that two clusters result. Which observations are in each cluster?
+
+Las observaciones del primer cluster serían la 1, la 2 y la 3.
+
+La unica observacion del segundo cluster sería la 4.
+
+Por lo que tendriamos los clusters ((1, 2), 3) y (4).
+
+#### (e) It is mentioned in the chapter that at each fusion in the dendrogram, the position of the two clusters being fused can be swapped without changing the meaning of the dendrogram. Draw a dendrogram that is equivalent to the dendrogram in (a), for which two or more of the leaves are repositioned, but for which the meaning of the dendrogram is the same.
+
+Para dibujar un dendrograma equivalente al creado en el apartado (a) la unica posibilidad es cambiar el orden de las etiquetas, ya que al aplicar la misma estrategia de linkage el resultado será el mismo, en el codigo mostrado a continuación se muestra la creación del dendograma.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 6.3. Dendrograma equivalente al creado en el apartado (a)."}
+
+plot(hclust(matriz.disimilitud, method="complete"), labels=c(2,1,4,3))
+```
+
+<br>
+
+<br>
+
+### Ejercicio 7 (12.6.3 ISL)
+
+#### In this problem, you will perform K-means clustering manually, with $K = 2$, on a small example with $n = 6$ observations and $p = 2$ features. The observations are as follows.
+
+![](images/clipboard-258326324.png){width="161"}
+
+#### (a) Plot the observations.
+
+En el siguiente grafico se muestran las observaciones del enunciado.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 7.1. Grafico de las n = 6 observaciones y p = 2 caracteristicas del ejercicio 7."}
+
+datos7 <- cbind(c(1, 1, 0, 5, 6, 4), c(4, 3, 4, 1, 2, 0))
+plot(datos7[,1], datos7[,2])
+```
+
+#### (b) Randomly assign a cluster label to each observation. You can use the sample() command in R to do this. Report the cluster labels for each observation.
+
+A continuacion se asignan etiquetas (1 o 2) de manera aleatoria a las observaciones de la matriz con los datos.
+
+```{r}
+set.seed(2)
+etiquetas <- sample(2, nrow(datos7), replace = T)
+print(etiquetas)
+```
+
+Como se observa tras la ejecucion del codigo, 4 observaciones tendrán la etiqueta 2 y 2 la etiqueta 1.
+
+A continuación se muestra de manera visual la clasificación mediante colores.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 7.2. Grafico de las n = 6 observaciones y p = 2 caracteristicas del ejercicio 7, clasificadas por colores según las etiquetas."}
+
+plot(datos7[,1], datos7[,2], col = (etiquetas + 1))
+```
+
+#### (c) Compute the centroid for each cluster.
+
+El siguiente codigo calcula los centroides de los dos clusters segun las etiquetas generadas.
+
+```{r}
+centroid1 = c(mean(datos7[etiquetas==1, 1]), mean(datos7[etiquetas==1, 2]))
+centroid2 = c(mean(datos7[etiquetas==2, 1]), mean(datos7[etiquetas==2, 2]))
+```
+
+A continuacion se muestran los valores de los centroides calculados.
+
+```{r}
+centroides <- data.frame(
+  Columna1 = c(centroid1[1], centroid2[1]),
+  Columna2 = c(centroid1[2], centroid2[2])
+)
+rownames(centroides) <- c("Centroide 1", "Centroide 2")
+
+knitr::kable(centroides, caption="Tabla 7.1. Resultados de los centroides.")
+```
+
+A continuación se representa el grafico anterior, añadiendo los centroides calculados.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 7.3. Grafico de las n = 6 observaciones y p = 2 caracteristicas del ejercicio 7, clasificadas por colores según las etiquetas y mostrando los respectivos centroides calculados mediande cruces."}
+
+plot(datos7[,1], datos7[,2], col = (etiquetas + 1))
+points(centroid1[1], centroid1[2], col=2, pch=4)
+points(centroid2[1], centroid2[2], col=3, pch=4)
+```
+
+#### (d) Assign each observation to the centroid to which it is closest, in terms of Euclidean distance. Report the cluster labels for each observation.
+
+A continuación se define la formula que calcula la distancia euclidea entre dos puntos.
+
+```{r}
+dist_eucl = function(a, b) {
+  (sqrt((a[1] - b[1])^2 + (a[2]-b[2])^2))
+}
+```
+
+Como se observa en el grafico, unicamente la observación 3 (punto 0, 4) está mal clasificada, de todas formas, se calculará la distancia euclidea a ambos centroides para demostrar empiriramente este hecho.
+
+```{r}
+observación_3 <- c(0, 4)
+
+distancia.centroide1 <- dist_eucl(observación_3, centroid1)
+cat("La distancia al centroide 1 (rojo) es igual a: ", distancia.centroide1, "\n")
+
+distancia.centroide2 <- dist_eucl(observación_3, centroid2)
+cat("La distancia al centroide 2 (verde) es igual a: ", distancia.centroide2)
+
+```
+
+Por lo que la observación 3 deberia ser asignada al cluster 1. Para ello se va a modificar el valor del vector etiquetas.
+
+```{r}
+etiquetas <- c(1, 1, 1, 2, 2, 2)
+```
+
+#### (e) Repeat (c) and (d) until the answers obtained stop changing.
+
+A continuación se calculan los nuevos centroides tras clasificar la observacion erronea según la distancia Euclidea y se muestran sus valores en una tabla.
+
+```{r}
+centroid1.e = c(mean(datos7[etiquetas==1, 1]), mean(datos7[etiquetas==1, 2]))
+centroid2.e = c(mean(datos7[etiquetas==2, 1]), mean(datos7[etiquetas==2, 2]))
+```
+
+```{r}
+centroides.e <- data.frame(
+  Columna1 = c(centroid1[1], centroid2[1]),
+  Columna2 = c(centroid1[2], centroid2[2])
+)
+rownames(centroides) <- c("Centroide 1", "Centroide 2")
+
+knitr::kable(centroides.e, caption="Tabla 7.2. Resultados de los nuevos centroides, tras asignar las observaciones según el centroide cercano en terminos de distancia Euclidea.")
+```
+
+Una vez calculados los centroides, se muestra nuevamente el grafico con las observaciones y los centroides.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 7.4. Grafico de las n = 6 observaciones y los nuevos centroides calculados."}
+
+plot(datos7[,1], datos7[,2], col = (etiquetas + 1))
+points(centroid1.e[1], centroid1.e[2], col=2, pch=4)
+points(centroid2.e[1], centroid2.e[2], col=3, pch=4)
+```
+
+Como se observa en el grafico, ahora todas las muestras están bien clasificadas.
+
+#### (f) In your plot from (a), color the observations according to the cluster labels obtained.
+
+A continuación se muestra nuevamente el grafico con las observaciones, clasificadas por colores.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 7.5. Grafico de las n = 6 observaciones clasificadas según los clusters obtenidos."}
+
+plot(datos7[,1], datos7[,2], col = (etiquetas + 1))
+```
+
+<br>
+
+<br>
+
+### Ejercicio 8 (12.6.10 ISL)
+
+#### In this problem, you will generate simulated data, and then perform PCA and K-means clustering on the data.
+
+#### (a) Generate a simulated data set with 20 observations in each of three classes (i.e. 60 observations total), and 50 variables. Hint: There are a number of functions in R that you can use to generate data. One example is the rnorm() function; runif() is another option. Be sure to add a mean shift to the observations in each class so that there are three distinct classes.
+
+En el codigo mostrado se crean los datos, 60 observaciones cada una con 50 variables y la asignación de 3 clases diferentes (1-3).
+
+Para la separación de las clases, necesaria para la realización del apartado (b), se han modificado los valores de los dos primeros vectores de puntuación de los componentes principales manualmente.
+
+```{r}
+set.seed(1)
+x <- matrix(rnorm(20 * 3 * 50, mean = 10, sd = 0.001), ncol = 50)
+
+#Clase 1: Segunda columna Valor = 1, observaciones 1 - 20.
+x[1:20, 2] <- 1
+
+#Clase 2: Primera y segunda coluna Valor = 3, observaciones 21 - 40.
+x[21:40, 1] <- 3
+x[21:40, 2] <- 3
+
+#Clase 3: Primera columna Valor = 5, observaciones 41 - 60.
+x[41:60, 1] <- 5
+
+etiquetas8 <- c(rep(1, 20), rep(2, 20), rep(3, 20))
+```
+
+#### (b) Perform PCA on the 60 observations and plot the first two principal component score vectors. Use a different color to indicate the observations in each of the three classes. If the three classes appear separated in this plot, then continue on to part (c). If not, then return to part (a) and modify the simulation so that there is greater separation between the three classes. Do not continue to part (c) until the three classes show at least some separation in the first two principal component score vectors.
+
+A continuación se realiza el analisis de componentes principales a los datos generados en el apartado anterior y se muestran graficamente los vectores de puntuación de los dos primeros componentes del PCA.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 8.1. Grafico de los vectores de puntuación de los dos primeros componentes principales del PCA sobre el conjunto de datos."}
+
+analisis.comp.prin <- prcomp(x)
+plot(analisis.comp.prin$x[, 1:2], col = 1:3, pch = 19)
+```
+
+Como se observa en el gráfico, las tres clases son separables, por lo que se procede al desarrollo del apartado (c).
+
+#### (c) Perform K-means clustering of the observations with K = 3. How well do the clusters that you obtained in K-means clustering compare to the true class labels? Hint: You can use the table() function in R to compare the true class labels to the class labels obtained by clustering. Be careful how you interpret the results: K-means clustering will arbitrarily number the clusters, so you cannot simply check whether the true class labels and clustering labels are the same.
+
+A continuación se aplica K-means al conjunto de datos, se muestra el numero de observaciones en cada cluster y se muestra una tabla con los resultados.
+
+```{r}
+km.out.3 = kmeans(x, 3)
+km.out.3$size   
+```
+
+```{r}
+knitr::kable(table(km.out.3$cluster, etiquetas8), caption="Tabla 8.1. Resultados del algoritmo K-means con k = 3.")
+```
+
+El algoritmo K-means con k=3 ha clasificado perfectamente las 60 observaciones en sus respectivas clases, ya que todas las observaciones de una misma clase se agrupan en el mismo cluster, tal cual se observa en la matriz generada.
+
+#### (d) Perform K-means clustering with K = 2. Describe your results.
+
+De la misma forma que en el apartado anterior, se aplica K-means con k=2.
+
+```{r}
+km.out.2 = kmeans(x, 2)
+km.out.2$size
+```
+
+```{r}
+knitr::kable(table(km.out.2$cluster, etiquetas8), caption="Tabla 8.2. Resultados del algoritmo K-means con k = 2.")
+```
+
+Al hacer el clustering con K = 2 se observa que una clase de las 3 disponibles originalmente ha absorbido la totalidad de otra clase, dando como resultado un cluster con 20 observaciones y otro con 40 de observaciones.
+
+#### (e) Now perform K-means clustering with K = 4, and describe your results.
+
+A continuación se aplica K-means con k = 4.
+
+```{r}
+km.out.4 = kmeans(x, 4)
+km.out.4$size
+```
+
+```{r}
+knitr::kable(table(km.out.4$cluster, etiquetas8), caption="Tabla 8.3. Resultados del algoritmo K-means con k = 4.")
+```
+
+En este caso se observa que los dos primeros clusters han obtenido las observaciones de las clases de manera correcta, mientras que los dos restantes han obtenido una separación de las observaciones de la clase, resultando dos clusters de tamaño 13 y 7 respectivamente.
+
+#### (f) Now perform K-means clustering with K = 3 on the first two principal component score vectors, rather than on the raw data. That is, perform K-means clustering on the 60 × 2 matrix of which the first column is the first principal component score vector, and the second column is the second principal component score vector. Comment on the results.
+
+Seguidamente se aplica K-menas con k = 3 pero unicamente con las dos primeras componentes principales del PCA.
+
+```{r}
+set.seed(1)
+km.out.f = kmeans(analisis.comp.prin$x[,1:2], 3)
+knitr::kable(table(km.out.f$cluster, etiquetas8), caption="Tabla 8.4. Resultados del algoritmo K-means en los dos primeros vectores de puntuación de los componentes principales, con k = 3.")
+```
+
+En este caso se observa como las observaciones se clasifican perfectamente.
+
+#### (g) Using the scale() function, perform K-means clustering with K = 3 on the data after scaling each variable to have standard deviation one. How do these results compare to those obtained in (b)? Explain.
+
+Finalmente se ha aplicado k-means con k = 3 y las variables escaladas.
+
+```{r}
+km.out.g = kmeans(scale(x), 3)
+km.out.g$size
+```
+
+```{r}
+knitr::kable(table(km.out.g$cluster, etiquetas8), caption="Tabla 8.5. Resultados del algoritmo K-means con k = 3 y las variables escaladas.")
+```
+
+Como se observa, el escalado es la estrategia que peores resultados de clasificación ha obtenido.
+
+<br>
+
+<br>
+
+#### Ejercicio 9 (12.6.13 ISL)
+
+#### On the book website, www.statlearning.com, there is a gene expression data set (Ch12Ex13.csv) that consists of 40 tissue samples with measurements on 1,000 genes. The first 20 samples are from healthy patients, while the second 20 are from a diseased group.
+
+#### (a) Load in the data using read.csv(). You will need to select header = F.
+
+A continuación se carga en R el dataset descargado de manera local a partir de la pagina web indicada.
+
+```{r}
+datos9 <- read.csv("Ch12Ex13.csv", header = FALSE)
+
+top_Data <- head(datos9)
+
+knitr::kable(top_Data, caption="Tabla 9.1. Seis primeras filas del dataset Ch12Ex13")
+```
+
+#### (b) Apply hierarchical clustering to the samples using correlation-based distance, and plot the dendrogram. Do the genes separate the samples into the two groups? Do your results depend on the type of linkage used?
+
+El siguiente fragmento de codigo genera el dendrograma jerarquico de los datos, aplicando complete linkage.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 9.1. Dendrograma jerarquico de los datos utilizando la vinculación completa."}
+
+disi.datos9 = as.dist(1 - cor(datos9))
+plot(hclust(disi.datos9, method="complete"))
+```
+
+A continuación se realizarán diferentes tipos de dendrogramas para comparar las separaciones según las diferentes vinculaciones.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 9.2. Dendrograma jerarquico de los datos utilizando la vinculación individual."}
+
+plot(hclust(disi.datos9, method="single"))
+```
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 9.3. Dendrograma jerarquico de los datos utilizando la vinculación promedio."}
+
+plot(hclust(disi.datos9, method="average"))
+```
+
+Como se observa en los dendrogramas generados, las agrupaciones de las observaciones difieren según el tipo de vinculación aplicada. Se obtienen dos clusters para la vinculación completa e individual, y tres clusters al utilizar la vinculación promedio.
+
+#### (c) Your collaborator wants to know which genes differ the most across the two groups. Suggest a way to answer this question, and apply it here.
+
+Con el objetivo de analizar los genes que mas difieren entre los dos grupos (pacientes sanos y enfermos) se va a utilizar el analisis de componentes principales.
+
+Para ello se va a definir los genes más importantes basandose en la magnitud de las cargas de las componentes principales, sumandolas y ordenandolas de mayor a menor.
+
+```{r}
+pca.datos9 <- prcomp(t(datos9))
+
+total.load <- apply(pca.datos9$rotation, 1, sum)
+index <- order(abs(total.load), decreasing = TRUE)
+```
+
+Los genes que mas difieren entre ambos grupos de pacientes son los mostrados a continuación.
+
+```{r}
+knitr::kable(t(index[1:10]), caption="Tabla 9.2. Los indices de los 10 genes que mas difieren entre los grupos de pacientes sanos y enfermos.")
+
+```

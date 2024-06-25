@@ -1,0 +1,1497 @@
+---
+title: |
+                 Soluciones Hoja1
+subtitle: | 
+          Aprendizaje estadístico (43455)
+  
+           Curso 2023/2024
+
+
+author: | 
+  Stefan Rada
+output: html_document
+---
+
+<br>
+
+<h3 style="color:red">
+
+Ejercicio 1: (3.7.1 ISL)
+
+</h3>
+
+Describe the null hypotheses to which the p-values given in Table 3.4 correspond. Explain what conclusions you can draw based on these p-values. Your explanation should be phrased in terms of sales, TV, radio, and newspaper, rather than in terms of the coefficients of the linear model.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+![Figura 1.1. Tabla 3.4 del libro Introduction to Statistical Learning](images/tabla3.4.JPG)
+
+Las hipotesis nulas para la television, la radio y los periodicos se basan en que los presupuestos de publicidad no tienen ningun efecto en las ventas. Las hipotesis nulas se muestran a continuación:
+
+Televisión:
+
+$$
+H_0 : β = 0
+$$
+
+Radio:
+
+$$
+H_0 : β = 0
+$$
+
+Periodicos:
+
+$$
+H_0 : β = 0
+$$
+
+Los P-Valores de la television y la radio son significantes (muy pequeños), por lo que se puede concluir que se rechazan las hipotesis nulas de television y radio. Por el otro lado, el P-Valor de los periodicos es insignificante (muy elevado), por lo que no rechazamos la hipotesis nula.
+
+Como conclusion se puede confirmar que los presupuestos en publicidad de los periodicos no tienen ningun efecto en las ventas de estos.
+
+<br>
+
+<h3 style="color:red">
+
+Ejercicio 2: (3.7.3 ISL)
+
+</h3>
+
+Suppose we have a data set with five predictors, $X_{1}$ = GPA, $X_{2}$ = IQ, $X_{3}$ = Level (1 for College and 0 for High School), $X_{4}$ = Interaction between GPA and IQ, and $X_{5}$ = Interaction between GPA and Level. The response is starting salary after graduation (in thousands of dollars). Suppose we use least squares to fit the model, and get $β_{0} = 50$, $β_{1} = 20$ , $\beta_{2} = 0.07$ ,$\beta_{3} = 35$ , $\beta_{4} = 0.01$, $β_{5} = − 10$.
+
+##### (a) Which answer is correct, and why?
+
+i.  For a fixed value of IQ and GPA, GPA, high school graduates earn more, on average, than college graduates.
+ii. For a fixed value of IQ and GPA, college graduates earn more, on average, than high school graduates.
+iii. For a fixed value of IQ and GPA, high school graduates earn more, on average, than college graduates provided that the GPA is high enough.
+iv. For a fixed value of IQ and GPA, college graduates earn more, on average, than high school graduates provided that the GPA is high enough.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+La formula de prediccion queda de la siguiente manera
+
+$$
+Salario = 50+20*GPA+0.07*IQ+35*LEVEL+0.01*GPA*IQ-10*GPA*LEVEL
+$$
+
+La formula se puede dividir en dos, dependiendo del nivel de estudios, asignado por 0 (High School) y 1 (College).
+
+$$
+Salario High School = 50 + 20* GPA +0.07*IQ+0.01*GPA*IQ
+$$
+
+$$
+Salario College = 85+10*GPA+0.07*IQ+0.01*GPA*IQ
+$$
+
+A partir de esas formulas si despejamos obtenemos la inecuacion siguiente (en caso de tener los mismos valores en IQ y GPA):
+
+Salario High School \>= Salario College
+
+$$
+50+20*GPA >= 85*10*GPA7
+$$ $$
+10*GPA >= 35
+$$
+
+Solo si GPA \>= 3,5
+
+Por lo que la respuesta correcta seria la iii) For a fixed value of IQ and GPA, high school graduates earn more, on average, than college graduates provided that the GPA is high enough.
+
+<br>
+
+##### (b) Predict the salary of a college graduate with IQ of 110 and a GPA of 4.0.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+Para obtener la solución solo hace falta sustituir los valores en la formula.
+
+$$
+Salario = 50+20*GPA+0.07*IQ+35*LEVEL+0.01*GPA*IQ-10*GPA*LEVEL
+$$
+
+$$
+Salario = 50+20*4+0.07*110+35*1+0.01*4*110-10*4*1 = 137.1
+$$
+
+La predicción da como resultado un salario final de 137.100 dolares.
+
+<br>
+
+##### (c) True or false: Since the coefficient for the GPA/IQ interaction term is very small, there is very little evidence of an interaction effect. Justify your answer.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+Esto es falso, ya que para poder comprobar esta afirmacion primero se debe establecer la hipotesis nula y calcular el P-Valor para poder afirmar o no si existe interaccion. Un coeficiente pequeño no significa que no hay interaccion.\
+\
+\
+
+<h3 style="color:red">
+
+Ejercicio 3: (3.7.10 ISL)
+
+</h3>
+
+This question should be answered using the *Carseats* data set.
+
+<br>
+
+##### (a) Fit a multiple regression model to predict *Sales* using *Price*, *Urban*, and *US*.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r, include=FALSE}
+library("ISLR")
+library("ISLR2")
+```
+
+```{r}
+data("Carseats")
+top_Data <- head(Carseats)
+knitr::kable(top_Data, caption="Tabla 3.1. Seis primeras filas del dataset Carseats.")
+
+```
+
+```{r}
+modelo <- lm(Sales ~ Price + Urban + US, data = Carseats)
+summary(modelo)
+```
+
+El modelo de predicción se encuentra almacenado en la variable *modelo,* arriba se pueden consultar sus caracteristicas y coeficientes.
+
+<br>
+
+##### (b) Provide an interpretation of each coefficient in the model. Be careful---some of the variables in the model are qualitative!
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+El coeficiente de precio al ser negativo, se puede interpretar como la perdida en 54 unidades de ventas, al incrementar 1 dolar el precio del vehiculo, ya que el precio viene dado en miles.
+
+Seguidamente, el coeficiente Urban (variable categorica: 1 si es la ubicacion es urbana y 0 si no) se interpreta como que aproximadamente se venden 22 vehiculos menos en la ubicaciones urbanas que en las demas, teniendo en cuenta las demas variables identicas.
+
+Finalmente el coeficiente US (asimismo variable categorica: 1 si la tienda se encuentra en los EEUU y 0 si no) se puede interpretar de la misma manera: si todas las demas variables predictoras son identicas, de promedio se venderan 1200 vehiculos mas si las tiendas se encuentran dentro de los Estados Unidos.
+
+<br>
+
+##### (c) Write out the model in equation form, being careful to handle the qualitative variables properly.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+La formula es la siguiente
+
+$$
+Ventas = 13.043469 -0.054459 * Precio -0.021916 * Urban + 1.200573 * US
+$$
+
+Cabe destacar que las variables Urban y US son categoricas y tienen como valores 1 (si) y 0 (no).\
+\
+<br>
+
+##### (d) For which of the predictors can you reject the null hypothesis $H_{0} :β_{j} =0$?
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+Como podemos ver en el summary del modelo, podemos rechazar la hipotesis nula para los predictores Price y US, ya que sus P-Valores son significantes (es decir muy reducidos).
+
+<br>
+
+##### (e) On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+modelo_reducido <- lm(Sales ~ Price + US, data = Carseats)
+summary(modelo_reducido)
+```
+
+Este modelo se ha creado mediante la eliminacion del predictor Urban del cuales no podemos rechazar la hipotesis nula, se encuentra almacenado en la variable *modelo_reducido.*
+
+<br>
+
+##### (f) How well do the models in (a) and (e) fit the data?
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+Para ver como de bien se ajustan los modelos creados a los datos, tenemos que observar el valor de $R^2$ de ambos modelos.
+
+Como se puede observar, el valor de $R^2$ es identico en ambos modelos, con un valor de 0.2393, esto se interpreta como que ambos modelos explican aproximadamente el 24% de la variabilidad de los datos .
+
+<br>
+
+##### (g) Using the model from (e), obtain 95% confidence intervals for the coefficient(s).
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+confianza_g <- confint(modelo_reducido, level = 0.95)
+knitr::kable(confianza_g, caption="Tabla 3.2. Intervalos de confianza del 95% para el modelo creado en el apartado E")
+```
+
+<br>
+
+##### (h) Is there evidence of outliers or high leverage observations in the model from (e)?
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 3.1. Gráfico de dispersión de los valores ajustados y residuos estandarizados en la predicción del dataset Carseats del modelo creado en el apartado (e)."}
+
+par(mfrow=c(1,1))
+plot(predict(modelo_reducido),rstudent(modelo_reducido),xlab="Valores Ajustados", ylab="Residuos estandarizados",ylim=c(-3.2,3.2))
+abline(h=3,lty=2,col="blue")
+abline(h=-3,lty=2,col="blue")
+```
+
+Como se puede observar en el grafico no se dispone de ningun valor atipico (ya que no hay ningúna observación cuyo residuo estudentizado sea mayor o menor que 3), esto se puede comprobar de forma no visual en el siguiente chunk de codigo, que muestra el total de valores fuera de la cota establecida.
+
+```{r}
+seq(1, nrow(Carseats))[which(abs(rstudent(modelo_reducido))>3)]
+```
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 3.2. Gráfico de dispersión de los valores estadisticos de las observaciones utilizadas en la creación del modelo (e), junto con la linea de cota."}
+
+par(mfrow=c(1,1))
+k=length(modelo_reducido$coefficients) 
+v=(2*k)/nrow(Carseats)
+plot(hatvalues(modelo_reducido),ylab="Estadisticos.")
+abline(h=v,lty=2,col="green")
+```
+
+En cuanto a puntos palanca, si se han encontrado varios cuyo valor estadistico es mayor que la cota $v=(2*k)/n$.\
+En el chunk de codigo de abajo se listan los indices de las observaciones consideradas como puntos palanca.
+
+```{r}
+seq(1,nrow(Carseats))[which(hatvalues(modelo_reducido)>v)]
+```
+
+<br>
+
+<h3 style="color:red">
+
+Ejercicio 4: (3.7.13 ISL)
+
+</h3>
+
+In this exercise you will create some simulated data and will ft simple linear regression models to it. Make sure to use set.seed(1) prior to starting part (a) to ensure consistent results.
+
+```{r, include=FALSE}
+set.seed(1)
+```
+
+<br>
+
+##### (a) Using the rnorm() function, create a vector, x, containing 100 observations drawn from a N(0, 1) distribution. This represents a feature, X.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+x = rnorm(100, mean=0, sd=1)
+```
+
+<br>
+
+##### (b)Using the rnorm() function, create a vector, eps, containing 100 observations drawn from a N(0, 0.25) distribution---a normal distribution with mean zero and variance 0.25.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+eps = rnorm(100, mean=0, sd=0.5)
+```
+
+<br>
+
+##### (c) Using x and eps, generate a vector y according to the model Y = −1+0.5X + e . What is the length of the vector y? What are the values of β0 and β1 in this linear model?
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+y = -1 +(0.5*x) + eps
+print(length(y))
+```
+
+La longitud del vector y es de 100 unidades, mientras que los coeficientes tienen los valores:
+
+$$
+β_0 = -1
+$$
+
+$$
+β_1 = 0.5
+$$
+
+<br>
+
+##### (d)Create a scatterplot displaying the relationship between x and y. Comment on what you observe.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 4.1. Gráfico de dispersión de los datos presentes en las variables X e Y"}
+plot(x, y, main="Gráfico de Dispersión de X e Y", xlab="x", ylab="y", col="blue")
+```
+
+Se observa claramente una tendencia de incremento lineal entre X e Y.
+
+<br>
+
+##### (e)Fit a least squares linear model to predict y using x. Comment on the model obtained. How do βˆ0 and βˆ1 compare to β0 and β1?
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+modelo4 <- lm(y ~ x)
+summary(modelo4)
+```
+
+El modelo real disponia de los siguientes coeficientes:
+
+$$
+β_0 = -1
+$$ $$
+β_1 = 0.5
+$$
+
+Para el nuevo modelo creado los valores de los coeficientes son los siguientes
+
+$$
+\hat \beta_0 = -1.02
+$$
+
+$$
+\hat \beta_1 = 0.50
+$$
+
+Los valores de los coeficientes estimados se aproximan con bastante precision a los valores del modelo real.
+
+<br>
+
+##### (f) Display the least squares line on the scatterplot obtained in (d). Draw the population regression line on the plot, in a diferent color. Use the legend() command to create an appropriate legend.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 4.2. Gráfico de dispersión de los datos presentes en las variables X e Y, y representación de los modelos de regresión creados."}
+plot(x, y, main="Gráfico de Dispersión y representación de los modelos.", xlab="x", ylab="y", col="blue")
+
+abline(a=-1,b=0.5, col="red") #Modelo real
+abline(modelo4, col ="blue") #Modelo obtenido
+
+legend('bottomright', legend=c('Modelo Real', 'Modelo Obtenido'), col=c('red','blue'), bty='n', lty = c(1, 1))
+```
+
+<br>
+
+##### (g) Now fit a polynomial regression model that predicts y using x and x\^2. Is there evidence that the quadratic term improves the model ft? Explain your answer.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+modelo4B <- lm(y ~ x + I(x^2))
+summary(modelo4B)
+```
+
+El coeficiente de $x^2$ no es significante, por lo tanto no mejora el modelo. No es significante ya que su P-Valor es mucho mayor a 0,05.
+
+Tambien se observa que el valor $R^2$ es mayor, es decir explica mejor al variabilidad de los datos, y asimismo el error residual es un poco mas reducido, pero estas ligeras mejoras no valen la pena teniendo en cuenta la complejidad que se añade al crear el modelo cuadratico.
+
+<br>
+
+##### (h) Repeat (a)--(f) after modifying the data generation process in such a way that there is less noise in the data. The model (3.39) should remain the same. You can do this by decreasing the variance of the normal distribution used to generate the error term e in (b). Describe your results.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 4.3. Gráfico de dispersión de los datos presentes en las variables X e Y, al añadir menos ruido en los datos."}
+set.seed(1)
+
+xh = rnorm(100, mean = 0, sd = 1)
+epsh <- rnorm(100, mean = 0, sd = 0.25) #Varianza decrementada a la mitad que en el caso anterior.
+
+yh <- -1 + (0.5 * xh) + epsh
+
+plot(xh, yh)
+```
+
+```{r}
+modeloh <- lm(yh ~ xh)
+summary(modeloh)
+```
+
+```{r, fig.width = 9,fig.height = 6, fig.cap="Figura 4.4. Gráfico de dispersión de los datos presentes en las variables X e Y, y representación de los modelos de regresión creados, al añadir menos ruido a los datos."}
+plot(xh, yh, main="Gráfico de Dispersión y representación de los modelos con menos ruido.", xlab="x", ylab="y", col="blue")
+
+abline(a=-1,b=0.5, col="red") #Modelo real
+abline(modeloh, col ="blue") #Modelo obtenido
+
+legend('topleft', legend=c('Modelo Real', 'Modelo Obtenido'), col=c('red','blue'), bty='n', lty = c(1, 1))
+```
+
+Se puede observar como al reducir la varianza del error se obtiene un modelo similar. Los coeficientes permanecen cerca al modelo real y al modelo anterior.
+
+Sin embargo, la diferencia se observa en el $R^2$, que en este caso se acerca mas a 1, con lo que se explica mas la variabilidad de los datos. El RSE tambien mejora, reduciendose considerablemente.
+
+En el grafico generado tambien se observa como las lineas se encuentran casi solapadas.
+
+<br>
+
+##### (i) Repeat (a)--(f) after modifying the data generation process in such a way that there is more noise in the data. The model (3.39) should remain the same. You can do this by increasing the variance of the normal distribution used to generate the error term " in (b). Describe your results.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 4.5. Gráfico de dispersión de los datos presentes en las variables X e Y, al añadir mas ruido en los datos."}
+set.seed(1)
+
+xi = rnorm(100, mean = 0, sd = 1)
+epsi <- rnorm(100,mean = 0, sd = 1) #Varianza incrementada al doble que en el caso anterior.
+
+yi <- -1 + (0.5 * xi) + epsi
+
+plot(xi, yi)
+```
+
+```{r}
+modeloi <- lm(yi ~ xi)
+summary(modeloi)
+```
+
+```{r, fig.width = 9,fig.height = 6, fig.cap="Figura 4.6. Gráfico de dispersión de los datos presentes en las variables X e Y, y representación de los modelos de regresión creados, al añadir mas ruido a los datos."}
+plot(xi, yi, main="Gráfico de Dispersión y representación de los modelos con mas ruido.", xlab="x", ylab="y", col="blue")
+
+abline(a=-1,b=0.5, col="red") #Modelo real
+abline(modeloi, col ="blue") #Modelo obtenido
+
+legend('topleft', legend=c('Modelo Real', 'Modelo Obtenido'), col=c('red','blue'), bty='n', lty = c(1, 1))
+```
+
+En este caso, al añadir mas ruido duplicando la varianza del error, sucede justo lo contrario, el valor de $R^2$ se reduce considerablemente y se incrementa el RSE.
+
+Los coeficientes del modelo se van alejando del modelo real.
+
+<br>
+
+##### (j) What are the confdence intervals for β0 and β1 based on the original data set, the noisier data set, and the less noisy data set? Comment on your results.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+limites4 <- confint(modelo4, level = 0.95)
+knitr::kable(limites4, caption="Tabla 4.1. Intervalos de confianza para los parámetros del modelo de regresión simple.",digits=3)
+
+```
+
+```{r}
+limitesH <- confint(modeloh, level = 0.95)
+knitr::kable(limitesH, caption="Tabla 4.2. Intervalos de confianza para los parámetros del modelo de regresión creado en el apartado H (poco ruido).",digits=3)
+```
+
+```{r}
+limitesI <- confint(modeloi, level = 0.95)
+knitr::kable(limitesI, caption="Tabla 4.3. Intervalos de confianza para los parámetros del modelo de regresión creado en el apartado I (más ruido)",digits=3)
+```
+
+Se observa como en el modelo con mas ruido (i) el intervalo es mayor, por lo tanto menos precision en las predicciones. Por el contrario, el modelo con los intervalos mas reducidos es el que tiene menos ruido (h) lo que permite una mejor prediccion.
+
+<br>
+
+<h3 style="color:red">
+
+Ejercicio 5: (3.7.14 ISL)
+
+</h3>
+
+#### This problem focuses on the collinearity problem.
+
+<br>
+
+##### (a) Perform the following commands in R:
+
+```{r}
+set.seed(1)
+x1 <- runif(100)
+x2 <- 0.5 * x1 + rnorm(100) / 10
+y <- 2 + 2 * x1 + 0.3 * x2 + rnorm(100)
+```
+
+##### The last line corresponds to creating a linear model in which y is a function of x1 and x2. Write out the form of the linear model. What are the regression coefcients?
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+La formula del modelo lineal es la siguiente
+
+$$
+Y = 2 + 2x1 + 0.3x2 + eps
+$$
+
+Donde eps es una districubión Normal (0, 1). Los coeficientes son los siguientes:
+
+$\beta_0 = 2$ , $\beta_1 = 2$ y $\beta_2 = 0.3$
+
+<br>
+
+##### (b) What is the correlation between x1 and x2? Create a scatterplot displaying the relationship between the variables.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r, fig.width = 9,fig.height = 6, fig.cap="Figura 5.1. Gráfico de dispersión de los datos presentes en las variables X1 y X2."}
+
+plot(x1, x2, xlab="x1", ylab="x2", col="blue")
+```
+
+```{r}
+cor(x1, x2)
+```
+
+La correlación entre las dos variables da como resultado 0.84, esto significa que disponen de una correlación positiva. Cuando una variable aumenta, tambien aumenta la otra.
+
+Esto se puede observar tambien en el grafico creado.
+
+<br>
+
+##### (c) Using this data, ft a least squares regression to predict y using x1 and x2. Describe the results obtained. What are βˆ0, βˆ1, and βˆ2? How do these relate to the true β0, β1, and β2? Can you reject the null hypothesis H0 : β1 = 0? How about the null hypothesis H0 : β2 = 0?
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+modelo5 <- lm(y ~ x1 + x2)
+summary(modelo5)
+```
+
+No se obtienen buenos resultados al calcular un modelo por el metodo de minimos cuadrados, como se observa en el resumen creado, obtenemos un ajuste de $R^2$ muy pobre, ademas los coeficientes estan muy alejados del modelo real, en este caso tenemos $\hat\beta_0 = 2.1$ , $\hat\beta_1 = 1.4$ y $\hat\beta_2 = 1$ y en el modelo real teniamos $\beta_0 = 2$ , $\beta_1 = 2~$ y $\beta_2 = 0.3$ .
+
+En cuanto a las hipotesis, al observar los P-Valores, podemos rechazar la hipotesis $H_0 : \hat\beta_1$ ya que su valor es inferior a 0.05, pero la hipotesis $H_0 : \hat\beta_2 = 0$ no se puede rechazar ya que su valor está por encima de 0.05.
+
+<br>
+
+##### (d) Now ft a least squares regression to predict y using only x1. Comment on your results. Can you reject the null hypothesis H0 : β1 = 0?
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+modelox1 <- lm(y ~ x1)
+summary(modelox1)
+```
+
+Este modelo de regresion obtenido solo mediante el predictor x1 es mas sencillo que el anterior, y como vemos a simple vista obtiene resultados similares en cuanto a RSE y el ajuste $R^2$.
+
+En cuanto a los coeficientes, en este modelo obtenemos $\hat\beta_0 = 2.1$ , $\hat\beta_1 = 1.98$ , mucho mas cercanos a los coeficientes reales que el modelo anterior en el que tambien se tenia en cuenta el predictor x2.
+
+Como el P-Valor de x1 es muy pequeño, si que podemos rechazar la hipotesis nula $H_0 : \hat\beta_1 = 0$ .
+
+<br>
+
+##### (e) Now ft a least squares regression to predict y using only x2. Comment on your results. Can you reject the null hypothesis H0 : β1 = 0?
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+modelox2 <- lm(y ~ x2)
+summary(modelox2)
+```
+
+En este modelo calculado utilizando el predictor x2, los resultados difieren de los anteriores. Obtenemos un error residual similar pero el ajuste $R^2$ es mucho mas pequeño y los predictores difieren en mayor medida.
+
+Los coeficientes ahora dan como resultado $\hat\beta_0 = 2.4$ , $\hat\beta_1 = 2.9$ , alejados del modelo real y del modelo calculado mediante el predictor x1.
+
+Pero de igual manera que en el apartado anterior, como el P-Valor de x2 es muy pequeño, si que podemos rechazar la hipotesis nula $H0 : \hat\beta_1 = 0$ .
+
+<br>
+
+##### (f) Do the results obtained in (c)--(e) contradict each other? Explain your answer.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+No, no se contradicen los modelos creados ya que x1 y x2 estan positivamente correlacionados, por lo tanto es normal que los modelos tengan coeficientes, errores y $R^2$ similares.
+
+<br>
+
+##### (g) Now suppose we obtain one additional observation, which was unfortunately mismeasured.
+
+```{r}
+x1 <- c(x1, 0.1)
+x2 <- c(x2, 0.8)
+y <- c(y, 6)
+```
+
+##### Re-ft the linear models from (c) to (e) using this new data. What efect does this new observation have on the each of the models? In each model, is this observation an outlier? A high-leverage point? Both? Explain your answers.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+modelo5g <- lm(y ~ x1 + x2)
+summary(modelo5g)
+```
+
+Con esta nueva observación, los coeficientes cambian a $\hat\beta_0 = 2.23$ , $\hat\beta_1 = 0.54$ y $\hat\beta_2 = 2.51$ , cuando anteriormente el modelo obtenido por minimos cuadrados tenia los coeficientes $\hat\beta_0 = 2.1$ , $\hat\beta_1 = 1.4$ y $\hat\beta_2 = 1$ .
+
+Como recordatorio, los coeficientes del modelo real son $β_0 = 2,$ $β_1 = 2$ , $β_2 = 0.3$ .
+
+El error y $R^2$ se han mantenido similares.
+
+```{r}
+modelox1g <- lm(y ~ x1)
+summary(modelox1g)
+```
+
+En este caso al añadir la observación los coeficientes del modelo cambian a $\hat\beta_0 = 2.26$ y $\hat\beta_1 = 1.77$ cuando anteriormente tenian el valor $\hat\beta_0 = 2.11$ y $\hat\beta_1 = 1.98$ .
+
+En este modelo con unicamente el predictor x1, el error y $R^2$ empeoran.
+
+```{r}
+modelox2g <- lm(y ~ x2)
+summary(modelox2g)
+```
+
+Finalmente, al usar unicamente el predictor x2 y con una nueva observación, el modelo cambia sus coeficientes a $\hat\beta_0 = 2.35$ y $\hat\beta_1 = 3.12$ , cuando sin esa observación los predictores tenian los valores $\hat\beta_0 = 2.39$ y $\hat\beta_1 = 2.90$ .
+
+El error y $R^2$ se han mantenido similares.
+
+Como conclusión, las nuevas observaciones añadidas empeoran los modelos, alejandolos del modelo real y empeorando su ajuste $R^2$ y error residual.
+
+Esto lo podemos comprobar dibujando de nuevo el grafico, destacando la nueva observación observamos porque empeoran los modelos.
+
+```{r, fig.width = 9,fig.height = 6, fig.cap="Figura 5.2. Gráfico de dispersión de los datos presentes en las variables X1 y X2 al añadir una nueva observación, destacada en color rojo."}
+
+plot(x1, x2, xlab="x1", ylab="x2", col="blue")
+points(0.1, 0.8, col="red", pch=19)
+```
+
+Como se puede ver, la nueva observación se encuentra muy alejada de la nube de puntos.
+
+```{r}
+cor(x1, x2)
+```
+
+La correlación tambien se disminuye, de 0.84 a 0,74.
+
+Para comprobar esto analiticamente se debe analizar si es un valor atipico.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 5.3. Gráfico de dispersión de los valores ajustados y residuos estandarizados."}
+
+par(mfrow=c(1,1))
+plot(predict(modelo5g),rstudent(modelo5g),xlab="Valores Ajustados", ylab="Residuos estandarizados",ylim=c(-3.2,3.2))
+abline(h=3,lty=2,col="blue")
+abline(h=-3,lty=2,col="blue")
+```
+
+El gráfico indica que no hay ningun valor atipico. De manera no visual se comprueba en el siguiente fragmento de codigo.
+
+```{r}
+seq(1, length(x1))[which(abs(rstudent(modelo5g))>3)]
+```
+
+Para comprobar si se trata de un punto palanca, se va a crear el siguiente grafico.
+
+```{r, fig.width = 7,fig.height = 5, fig.cap="Figura 5.4. Gráfico de dispersión de los valores estadisticos de las observaciones utilizadas en la creación del modelo5g, junto con la linea de cota."}
+
+par(mfrow=c(1,1))
+k=length(modelo5g$coefficients) 
+v=(2*k)/length(y)
+plot(hatvalues(modelo5g),ylab="Estadisticos.")
+abline(h=v,lty=2,col="green")
+```
+
+En el grafico se observa como la ultima observación se encuentra por encima de la linea de cota, con lo que se puede concluir que se trata de un punto palanca.
+
+De forma no visual, en el proximo fragmento de codigo se puede obtener el indice de la ultima observación introducida (101).
+
+```{r}
+seq(1,length(y))[which(hatvalues(modelo5g)>v)]
+```
+
+<br>
+
+<h3 style="color:red">
+
+Ejercicio 6
+
+</h3>
+
+Escribir una funcion en R que permita: <br>
+
+(i) Estimar con el bootstrap el error estandard (es decir la desviacion tıpica) de las estimaciones por mınimos cuadrados de los coeficientes de un modelo de regresion. <br>
+
+(ii) Calcular intervalos de confianza de nivel 0.95 para los coeficientes del modelo utilizando el bootstrap y el metodo de los percentiles. <br>
+
+Los parametros de entrada de la funcion seran: <br>
+
+\- reg: Un objeto lm(y x,data=\..., x=TRUE, y=TRUE) <br>
+
+\- B: Numero de muestras bootstrap <br>
+
+\- Nivel: Nivel del intervalo de confianza <br>
+
+Sea m el numero de coeficientes del modelo de regresion reg (incluyendo el termino constante). La funcion tendra como salida: <br>
+
+• El nivel de los intervalos de confianza calculados. <br>
+
+• Una matriz de tamaño m × 3 donde: cada fila corresponde a un coeficiente; la primera columna contiene la desviacion tıpica de la estimacion del coeficiente (estimada con el metodo bootstrap); la segunda y la tercera columna contienen el extremo inferior y superior del intervalo de confianza para el coeficiente respectivamente.<br>
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+bootstrap_regression_residuals <- function(modelo, B, nivel) {
+
+  m <- length(coef(modelo))
+  
+  matriz_bootstrap <- matrix(NA, nrow = B, ncol = m)
+  
+  #Simulacion y ajuste de los datos usando la funcion y almacenamiento en la matriz
+  for (i in 1:B) {
+    datos_bootstrap <- sim.lm.residuals(modelo, model.frame(modelo))
+    matriz_bootstrap[i, ] <- coef(lm(formula(modelo), data = datos_bootstrap))
+  }
+  
+  #Calculos
+  Desviacion <- apply(matriz_bootstrap, 2, sd)
+  Intervalo_Inferior <- apply(matriz_bootstrap, 2, quantile, probs = (1 - nivel) / 2)
+  Intervalo_Superior <- apply(matriz_bootstrap, 2, quantile, probs = 1 - (1 - nivel) / 2)
+  
+  matriz_resultado <- cbind(Desviacion, Intervalo_Inferior, Intervalo_Superior)
+  return(list(nivel = nivel, resultado = matriz_resultado))
+}
+
+
+#Función obtenida del libro TALR
+sim.lm.residuals <- function(mdl, df) {
+  resp.var <- all.vars(formula(mdl))[1]
+  expect.resp <- predict(mdl, newdata = df)
+  new.noise <- sample(residuals(mdl), size = length(expect.resp), replace = TRUE)
+  response <- expect.resp + new.noise
+  df[, resp.var] <- response
+  return(df)
+}
+```
+
+```{r}
+bootstrap_regression_cases <- function(modelo, B, nivel) {
+
+  m <- length(coef(modelo))
+  
+  matriz_bootstrap <- matrix(NA, nrow = B, ncol = m)
+  
+  #Simulacion y ajuste de los datos usando la estrategia resampling cases
+  for (i in 1:B) {
+    datos_bootstrap <- resample.data.frame(model.frame(modelo))
+    matriz_bootstrap[i, ] <- coef(lm(formula(modelo), data = datos_bootstrap))
+  }
+  
+  #Calculos
+  Desviacion <- apply(matriz_bootstrap, 2, sd)
+  Intervalo_Inferior <- apply(matriz_bootstrap, 2, quantile, probs = (1 - nivel) / 2)
+  Intervalo_Superior <- apply(matriz_bootstrap, 2, quantile, probs = 1 - (1 - nivel) / 2)
+  
+  matriz_resultado <- cbind(Desviacion, Intervalo_Inferior, Intervalo_Superior)
+  return(list(nivel = nivel, resultado = matriz_resultado))
+}
+
+#Función obtenida del libro TALR
+resample.data.frame <- function(df) {
+  df[resample(1:nrow(df)), ]
+}
+```
+
+<br>
+
+<h3 style="color:red">
+
+Ejercicio 7
+
+</h3>
+
+Utilizar la funcion definida en el ejercicio anterior para calcular con el metodo bootstrap: <br>
+
+(a) El error estandard de las estimaciones por mınimos cuadrados de los coeficientes del modelo con termino cuadratico de la practica 1 de ordenador del Tema 2 (Facturacion.txt). <br>
+
+(b) Intervalos de confianza de nivel 0.95 para los coeficientes del modelo con termino cuadratico de la practica 1 de ordenador del Tema 2. Comparar los resultados con los valores obtenidos en la practica 1 de ordenador. <br>
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+A continuación se utilizarán las funciones definidas en el ejercicio anterior para el cálculo del error y los intervalos en un caso práctico.
+
+```{r}
+Datos <- read.table("Facturacion.txt",header=TRUE)
+modelo_cuadratico <- lm(Facturacion ~ Inversion + I(Inversion^2), data = Datos)
+```
+
+```{r}
+ejecucion1 <- bootstrap_regression_residuals(modelo_cuadratico, B = 10000, nivel = 0.95)
+
+knitr::kable(ejecucion1$resultado, caption="Tabla 6.1. Resultados de los intervalos de confianza con un nivel del 95% y del error estandard de la ejecución de la función bootstrap con la estrategia Resampling Residuals en el dataset Facturación.")
+```
+
+```{r}
+ejecucion2 <- bootstrap_regression_residuals(modelo_cuadratico, B = 10000, nivel = 0.95)
+
+knitr::kable(ejecucion2$resultado, caption="Tabla 6.2. Resultados de los intervalos de confianza con un nivel del 95% y del error estandard de la ejecución de la función bootstrap con la estrategia Resampling Cases en el dataset Facturación.")
+```
+
+Las funciones bootstrap creadas permiten calcular el error estandar de las estimaciones por mınimos cuadrados de los coeficientes del modelo de regresion cuadratico de la practica 1 del tema 2, dichos errores se encuentran en la columna Desviacion.
+
+Los intervalos de confianza para un nivel de 95% tambien estan calculados gracias a las funciones, los podemos encontrar en las columnas Intervalo_Inferior e Intervalo_Superior.
+
+![Figura 7.1. Resultados de los intervalos de confianza de la practica 01 del tema 2 de la asignatura Aprendizaje Estadistico.](images/Captura.JPG)
+
+En la imagen se muestran los resultados obtenidos en la practica 1 del tema 2, como se puede observar, los resultados obtenidos mediante las dos funciones bootstrap con 10000 iteraciones difieren ligeramente de los obtenidos en la practica.
+
+<br>
+
+<h3 style="color:red">
+
+Ejercicio 8: (5.4.9 ISL)
+
+</h3>
+
+#### We will now consider the Boston housing data set, from the ISLR2 library.
+
+```{r}
+library("ISLR2")
+data("Boston")
+top_Data <- head(Boston)
+
+knitr::kable(top_Data, caption="Tabla 8.1. Seis primeras filas del dataset Boston")
+```
+
+<br>
+
+##### (a) Based on this data set, provide an estimate for the population mean of medv. Call this estimate µˆ.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+promedio_medv <- mean(Boston$medv)
+print(promedio_medv)
+```
+
+El promedio de los valores de la columna medv es de 22.53.
+
+<br>
+
+##### (b) Provide an estimate of the standard error of µˆ. Interpret this result.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+Hint: We can compute the standard error of the sample mean by dividing the sample standard deviation by the square root of the number of observations.
+
+```{r}
+error_promedio_medv <- sd(Boston$medv) / sqrt(nrow(Boston))
+print(error_promedio_medv)
+```
+
+El promedio del error estandar de la columna medv es de 0.41.
+
+<br>
+
+##### (c) Now estimate the standard error of µˆ using the bootstrap. How does this compare to your answer from (b)?
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r, include=FALSE}
+library("boot")
+```
+
+```{r}
+set.seed(1)
+
+bootstrap_promedio <- function(datos, i){
+  return(mean(datos[i])) 
+}
+
+error_promedio_bootstrap = boot(Boston$medv, bootstrap_promedio, 1000)
+print(error_promedio_bootstrap)
+```
+
+Como se puede ver en el calculo del error mediante bootstrap, el error difiere de manera ligera respecto al error calculado mediante la formula sd/sqrt (0.4106622 ≈ 0.4088611).
+
+<br>
+
+##### (d) Based on your bootstrap estimate from (c), provide a 95 % confdence interval for the mean of medv. Compare it to the results obtained using t.test(Boston\$medv).
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+Hint: You can approximate a 95 % confdence interval using the formula [ˆµ − 2SE(ˆµ), µˆ + 2SE(ˆµ)].
+
+```{r}
+t.test(Boston$medv)
+```
+
+```{r}
+intervalos_confianza <- c(error_promedio_bootstrap$t0 - 2 *  0.4020729,
+                          error_promedio_bootstrap$t0 + 2 *  0.4020729)
+tabla_intervalos <- data.frame("Intervalo Inferior" = intervalos_confianza[1],
+                               "Intervalo Superior" = intervalos_confianza[2])
+knitr::kable(tabla_intervalos, caption="Tabla 8.2. Intervalos de confianza con un nivel de 95%")
+```
+
+Como se puede observar, el intervalo de confianza calculado con bootstrap es similar al calculado con la funcion t.test ([21.72866 23.33695] ≈ [21.72953 23.33608])
+
+<br>
+
+##### (e) Based on this data set, provide an estimate, µˆmed, for the median value of medv in the population.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+mediana_medv <- median(Boston$medv)
+print(mediana_medv)
+```
+
+La mediana de la columna medv tiene un valor de 21.2.
+
+<br>
+
+##### (f) We now would like to estimate the standard error of µˆmed. Unfortunately, there is no simple formula for computing the standard error of the median. Instead, estimate the standard error of the median using the bootstrap. Comment on your fndings.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+set.seed(1)
+
+bootstrap_mediana <- function(datos, i){
+  return(median(datos[i])) 
+}
+
+resultados_bootstrap_mediana = boot(Boston$medv, bootstrap_mediana, 1000)
+print(resultados_bootstrap_mediana)
+```
+
+El error estandar de la mediana, calculado mediante bootsrap tiene el valor de 0.3778075.
+
+<br>
+
+##### (g) Based on this data set, provide an estimate for the tenth percentile of medv in Boston census tracts. Call this quantity µˆ0.1. (You can use the quantile() function.)
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+decimo_percentil <- quantile(Boston$medv, c(0.1))
+print(decimo_percentil)
+```
+
+El decimo percentil de la variable medv tiene un valor de 12.75.
+
+<br>
+
+##### (h) Use the bootstrap to estimate the standard error of µˆ0.1. Comment on your fndings
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+set.seed(1)
+
+bootstrap_percentil <- function(datos, i){
+  return(quantile(datos[i], c(0.1))) 
+}
+
+resultados_bootstrap_percentil = boot(Boston$medv, bootstrap_percentil, 1000)
+print(resultados_bootstrap_percentil)
+```
+
+El error estandar del decimo percentil, calculado mediante bootsrap tiene el valor de 0.4767526.
+
+<br>
+
+<h3 style="color:red">
+
+Ejercicio 9
+
+</h3>
+
+Utilizando los datos del fichero Facturacion.txt de la practica 1 de ordenador del Tema 2:
+
+<br>
+
+##### (a) Realizar un analisis de regresion utilizando el metodo de los k vecinos mas proximos, con k = 1, 5, 10, 50.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+Datos <- read.table("Facturacion.txt",header=TRUE)
+Datos$Inversion <- as.numeric(Datos$Inversion)
+Datos$Facturacion <- as.numeric(Datos$Facturacion)
+```
+
+```{r}
+top_data <- head(Datos)
+knitr::kable(top_data, caption="Tabla 9.1. Seis primeras filas del dataset Facturacion.txt")
+```
+
+```{r, include=FALSE}
+library("caret")
+```
+
+```{r}
+modelo9.knn1 <- knnreg(Facturacion ~ Inversion,data = Datos, k = 1)
+modelo9.knn5 <- knnreg(Facturacion ~ Inversion,data = Datos, k = 5)
+modelo9.knn10 <- knnreg(Facturacion ~ Inversion,data = Datos, k = 10)
+modelo9.knn50 <- knnreg(Facturacion ~ Inversion,data = Datos, k = 50)
+```
+
+<br>
+
+##### (b) Superponer a los datos las curvas de regresion estimadas y comentar las caracterısticas de las curvas al variar de k.
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+New.data=data.frame(Inversion=seq(1,7,length=200))
+```
+
+Para superponer al grafico de dispersion las curvas de regresion de los modelos KNN se ha creado un nuevo conjunto de datos para hacer predicciones sobre ellos.
+
+```{r, fig.width = 9,fig.height = 6, fig.cap="Figura 9.1. Gráfico de dispersión de los datos presentes en las variables Facturación e Inversion del dataset Facturación.txt con la superposición de la curva de regresion del modelo KNN = 1"}
+
+# K=1
+plot(Facturacion ~ Inversion, data = Datos, pch = 10, xlab = "Inversion", ylab = "Facturacion", main = "KNN, K=1")
+points(New.data$Inversion, predict(modelo9.knn1, New.data), type = "l", col = "green", lwd = 2)
+```
+
+```{r, fig.width = 9,fig.height = 6, fig.cap="Figura 9.2. Gráfico de dispersión de los datos presentes en las variables Facturación e Inversion del dataset Facturación.txt con la superposición de la curva de regresion del modelo KNN = 5"}
+
+# K=5
+plot(Facturacion ~ Inversion, data = Datos, pch = 10, xlab = "Inversion", ylab = "Facturacion", main = "KNN, K=5")
+points(New.data$Inversion, predict(modelo9.knn5, New.data), type = "l", col = "green", lwd = 2)
+```
+
+```{r, fig.width = 9,fig.height = 6, fig.cap="Figura 9.3. Gráfico de dispersión de los datos presentes en las variables Facturación e Inversion del dataset Facturación.txt con la superposición de la curva de regresion del modelo KNN = 10"}
+
+# K=10
+plot(Facturacion ~ Inversion, data = Datos, pch = 10, xlab = "Inversion", ylab = "Facturacion", main = "KNN, K=10")
+points(New.data$Inversion, predict(modelo9.knn10, New.data), type = "l", col = "green", lwd = 2)
+```
+
+```{r, fig.width = 9,fig.height = 6, fig.cap="Figura 9.4. Gráfico de dispersión de los datos presentes en las variables Facturación e Inversion del dataset Facturación.txt con la superposición de la curva de regresion del modelo KNN = 50"}
+
+# K=50
+plot(Facturacion ~ Inversion, data = Datos, pch = 10, xlab = "Inversion", ylab = "Facturacion", main = "KNN, K=50")
+points(New.data$Inversion, predict(modelo9.knn50, New.data), type = "l", col = "green", lwd = 2)
+```
+
+<br>
+
+##### (c) Predecir la facturacion media anual de un empresa tecnologica de gran tamaño cuya inversion media anual en I+D es de 5 millones de euros utilizando los 4 modelos estimados en (a).
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+nueva_inversion <- data.frame(Inversion = 5)
+
+nombres_modelos <- c("K=1", "K=5", "K=10", "K=50")
+
+resultados <- c(predict(modelo9.knn1, nueva_inversion),
+                predict(modelo9.knn5, nueva_inversion),
+                predict(modelo9.knn10, nueva_inversion),
+                predict(modelo9.knn50, nueva_inversion))
+
+tabla_resultados <- data.frame(Inversion = c(5, 5, 5, 5),
+                               Modelo = nombres_modelos,
+                               Prediccion = resultados)
+
+knitr::kable(tabla_resultados, caption="Tabla 9.2. Predicción de la facturacion media anual de una empresa que invierte 5 millones.")
+```
+
+<br>
+
+<h3 style="color:red">
+
+Ejercicio 10
+
+</h3>
+
+Calcular el error de entrenamiento y el error de generalizacion de los cuatro modelos estimados en el ejercicio 9. <br>
+
+El calculo del error de generalizacion requiere conocer el modelo verdadero que se proporciona en la parte 3 de la practica 1 de ordenador del Tema 2
+
+<br>
+
+<h4 style="color:blue">
+
+Solución
+
+</h4>
+
+<br>
+
+```{r}
+
+nombres_modelos <- c("K=1", "K=5", "K=10", "K=50")
+
+error_entrenamiento_k1 <- mean((predict(modelo9.knn1, Datos) - Datos$Facturacion)^2)
+error_entrenamiento_k5 <- mean((predict(modelo9.knn5, Datos) - Datos$Facturacion)^2)
+error_entrenamiento_k10 <- mean((predict(modelo9.knn10, Datos) - Datos$Facturacion)^2)
+error_entrenamiento_k50 <- mean((predict(modelo9.knn50, Datos) - Datos$Facturacion)^2)
+
+resultados_errores_entrenamiento <- c(error_entrenamiento_k1,error_entrenamiento_k5                          , error_entrenamiento_k10, error_entrenamiento_k50)
+
+tabla_errores_entrenamiento <- data.frame(Modelo = nombres_modelos,
+                            Error = resultados_errores_entrenamiento)
+
+knitr::kable(tabla_errores_entrenamiento, caption="Tabla 10.1. Errores de entrenamiento para cada modelo KNN")
+```
+
+```{r}
+
+#Modelo verdadero
+beta.0=300
+beta.1=3
+beta.2=1.5
+
+set.seed(1) 
+
+n=100000
+x1 <- runif(n, 1, 7)
+
+modelo_real = beta.0 + beta.1 * x1 + beta.2 * x1^2 + rnorm(n,0,3)  
+
+new_data <- data.frame(Inversion = x1)
+```
+
+En este ejercicio se ha supuesto $\epsilon$ con una media de 0 y una desviación tipica con valor 3.
+
+```{r}
+
+
+error_generalizacion_k1 <- mean((predict(modelo9.knn1, new_data) - modelo_real)^2)
+error_generalizacion_k5 <- mean((predict(modelo9.knn5, new_data) - modelo_real)^2)
+error_generalizacion_k10 <- mean((predict(modelo9.knn10, new_data) - modelo_real)^2)
+error_generalizacion_k50 <- mean((predict(modelo9.knn50, new_data) - modelo_real)^2)
+
+resultados_errores_generalizacion <- c(error_generalizacion_k1,error_generalizacion_k5,error_generalizacion_k10, error_generalizacion_k50)
+
+tabla_errores_generalizacion <- data.frame(Modelo = nombres_modelos,
+                            Error = resultados_errores_generalizacion)
+
+knitr::kable(tabla_errores_generalizacion, caption="Tabla 10.2. Errores de generalizacion para cada modelo KNN")
+```

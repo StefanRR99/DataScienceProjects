@@ -1,0 +1,360 @@
+---
+title: |
+  Prueba de Laboratorio
+author: |
+  Stefan Rada
+subtitle: |
+  Aprendizaje estadístico (43455)
+   Enero de 2024
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+
+#Paquetes necesarios
+
+require("scatterplot3d")  
+require("broom") 
+require("dplyr") 
+require("boot")
+require("corrplot")
+require("leaps")
+require("glmnet")
+require("lars")
+require("e1071")
+source("PlotFunctions.R")
+require("caret")       
+source("NormalityCheck.R")  
+require("car")
+library("ISLR2")        
+```
+
+\
+
+## Ejercicios 1
+
+```{r}
+Viviendas=read.table("Viviendas.txt", sep="", header=TRUE)
+n=nrow(Viviendas) #tamaño muestral
+set.seed(3)
+index.train=sample(n,392)
+index.test=setdiff(seq(1,n),index.train)
+data.train=Viviendas[index.train,]
+data.test=Viviendas[index.test,]
+```
+
+### 1.1
+
+A continuación se realizará un breve analisis exploratorio del conjunto de datos de entrenamiento del dataset Viviendas.
+
+El primer paso es comprobar la
+
+```{r, fig.width = 9,fig.height = 5, fig.cap="Figura 1.1. Representación grafica de los datos."}
+pairs(data.train,upper.panel=NULL)
+```
+
+A partir de este grafico se puede obtener mucha información, ya que a simple vista se detecta una gran cantidad de variables categoricas al fijarse en los patrones que muestran los datos en los graficos.
+
+Tambien se pueden concluir unas series de relaciones lineales entre las variables, de entre las cuales la mas destacable es la relacion de incremento de las variables Precio - Superficie, una relacion creciente y logica, ya que cuanta mas superficie tiene disponible una vivienda, mas dinero cuesta.
+
+Estas relaciones se pueden observar a continuación en la matriz de correlaciones.
+
+```{r, fig.width = 9,fig.height = 5, fig.cap="Figura 1.2. Matriz de correlaciones de las variables."}
+
+corrplot(cor(data.train), method="number",type="upper")
+```
+
+Como se ha comentado anteriormente, la relacion entre Precio - Superficie es la mas destacable, pero tabien encontramos la de Calidad - Precio, tambien creciente. Existen mas relaciones, pero no tan destacables como las mencionadas anteriormente.
+
+A continuación tambien considero importante observar la distribución de la variable Precio.
+
+```{r, fig.width = 9,fig.height = 5, fig.cap="Figura 1.2. Matriz de correlaciones de las variables."}
+
+hist(data.train$Precio, probability=TRUE,col="pink",cex.lab=1.5)
+
+```
+
+Como se observa en el histograma creado, la variable precio no sigue una distribución normal.
+
+### 1.2
+
+A continuación se ajusta un modelo de regresion por minimos cuadrados al conjunto de datos de entrenamiento.
+
+```{r}
+modelo1.completo <- lm(Precio ~., data = data.train)
+summary(modelo1.completo)
+```
+
+Los coeficientes del modelo son los siguientes
+
+```{r}
+coef(modelo1.completo)
+knitr::kable(t(coef(modelo1.completo)), caption="Taba 1.1 Coeficientes del modelo completo. ",digits=4)
+```
+
+En cuanto al P-valor de la variable Dormitorios es de 0.13792, superior al valor 0.05, por lo que la relacion de esta variable con el Precio de la vivienda no es estadísticamente significativa al nivel de significación α=0.05.
+
+Aun asi no seria correcto del todo afirmar que la variable Dormitorios no tiene ninguna influencia sobre el precio de la vivienda, esto unicamente significa que no hay evidencia de que añadir el regresor Dormitorios al modelo de regresión ayuda para mejorar en gran medida la predicción del precio de la vivienda.
+
+### 1.3
+
+A continuación se ajusta un modelo de regresion mediante el metodo de seleccion progresiva hacia atras, mediante validación cruzada, regla 1SD y metrica MAE.
+
+```{r}
+reg.backward=regsubsets(Precio~.,data=data.train,nvmax=8,method="backward")
+
+predict.regsubsets=function(object,newdata,id,...)
+{
+  form=as.formula(object$call[[2]])
+  mat=model.matrix(form,newdata)
+  coefi=coef(object,id=id)
+  pred=mat[,names(coefi)]%*%coefi
+  return(pred)
+}
+
+n.train <- nrow(data.train) 
+n.models=8
+
+set.seed(5)
+k1=10    # número de folds
+folds=sample(rep(1:k1,length=n.train))
+cv.MAE.back=matrix(NA,k1,n.models)
+for ( k in 1:k1)
+{
+    reg.temp=regsubsets(Precio~.,data=data.train[folds!=k,],nvmax=n.models,method="backward")
+    for (i in 1:n.models)
+    {
+        pred=predict(reg.temp, data.train[folds==k,],id=i)
+        cv.MAE.back[k,i]=mean(abs(data.train$Precio[folds==k] -pred)) #Metrica MAE
+    }
+}
+cv.MAE.models.back=apply(cv.MAE.back,2,mean)
+cv.MAE.models.sd.back=apply(cv.MAE.back,2,sd)
+
+best.backward.cv.sd=which.min(cv.MAE.models.sd.back) #Regla 1SD
+best.backward.cv.mse=which.min(cv.MAE.models.back) 
+
+print(best.backward.cv.sd)
+```
+
+Tal cual se observa tras la ejecución de la celda, el mejor modelo segun la regla 1SD es el que incluye 7 regresores.
+
+A continuacion se muestran los valores del modelo con 7 segresores, segun la regla 1SD.
+
+```{r}
+knitr::kable(t(coef(reg.backward,id=best.backward.cv.sd)), caption="Tabla 1.2 Coeficientes del modelo de seleccion progresiva hacia atras, segun la regla 1SD ",digits=4)
+```
+
+Seguidamente, se ajusta un modelo de regresion Ridge, en el codigo que prosigue se selecciona el valor de lambda por validacion cruzada de 10 iteraciones.
+
+```{r}
+x=model.matrix(Precio~.-1,data=data.train)
+y=data.train$Precio
+grid <- 10^seq(10, -2, length = 100)
+reg.Ridge=glmnet(x,y,alpha=0,lambda=grid,thresh = 1e-12)    # Regresión Ridge,  alpha=0
+set.seed(5)
+cv.Ridge=cv.glmnet(x,y,alpha=0,nfolds=10,type.measure="mae")  # Valor de lambda óptimo por validación cruzada
+Lambda.Ridge=cv.Ridge$"lambda.min"        # Valor de lambda óptimo, criterio: Min MAE
+Lambda.Ridge1Sd=cv.Ridge$"lambda.1se"   #   "              "        "     : Regla 1sd
+print(Lambda.Ridge1Sd)
+```
+
+El valor lambda segun la regla 1SD y la metrica MAE tiene el valor 14201.26.
+
+A continuación se muestran los coeficientes estimados del metodo Ridge, ajustado con valor de lambda seleccionado por validación cruzada.
+
+```{r}
+coef.bestRidge=as.matrix(coef(reg.Ridge,s=Lambda.Ridge1Sd) )      
+knitr::kable(t(coef.bestRidge), caption="Tabla 1.3 Coeficientes del modelo Ridge.",digits=4)
+```
+
+### 1.4
+
+En la tabla mostrada a continuación, se muestra el MAE de los 3 modelos de regresion, para el conjunto de datos de entrenamiento y de validacion.
+
+```{r}
+X.train=model.matrix(Precio ~ ., data = data.train)[,-1]
+Err.all=mean( abs(data.train$Precio-predict(modelo1.completo, data.train) ) )
+Err.back=mean( abs(data.train$Precio-predict(reg.backward,id=best.backward.cv.sd, data.train) ) )
+Err.ridge=mean( abs(data.train$Precio-predict(reg.Ridge,s=Lambda.Ridge1Sd, newx = X.train) ) )
+
+X.test=model.matrix(Precio ~ ., data = data.test)[,-1]
+Err.all.test=mean( abs(data.test$Precio-predict(modelo1.completo, data.test) ) )
+Err.back.test=mean( abs(data.test$Precio-predict(reg.backward,id=best.backward.cv.sd, data.test) ) )
+Err.ridge.test=mean( abs(data.test$Precio-predict(reg.Ridge,s=Lambda.Ridge1Sd, newx = X.test) ) )
+
+Err.mat=cbind(c(Err.all, Err.back, Err.ridge),
+              c(Err.all.test, Err.back.test, Err.ridge.test))
+
+dimnames(Err.mat)=list(c("Modelo completo", "Modelo Backwards", "Modelo Ridge"),c("MAE de entrenamiento","MAE de test"))
+
+knitr::kable(Err.mat, caption="Tabla 1.4. Error MAE para el conjunto de datos de entrenamiento y test.",digits=4)
+
+```
+
+### 1.5
+
+Como se observa en la tabla anterior, el error MAE del modelo Ridge es mucho mayor al de los dos modelos restantes. Esto puede deberse posiblemente a una seleccion no favorable del conjunto de datos de prueba o a una pobre eleccion de lambda.
+
+## Ejercicio 2
+
+```{r}
+MedPrecio=median(Viviendas$Precio) 
+Precio01=rep(0,522)
+Precio01[Viviendas$Precio>=MedPrecio]=1 
+Precio01=factor(Precio01) # variable respuesta 0/1, es un factor
+Viviendas01=Viviendas
+Viviendas01[ ,1]=Precio01
+colnames(Viviendas01)=c("Precio01",colnames((Viviendas[,-1]))) 
+data.test01=Viviendas01[index.test,c(1,2,4,5)]   # Solo incluye: Precio01, Superficie, Baños, Garaje
+data.train01=Viviendas01[index.train,c(1,2,4,5)] # Solo incluye: Precio01, Superficie, Baños, Garaje
+```
+
+### 2.1
+
+A continuacion se va a ajustar un SVM lineal con el parametro coste igual a 0.1.
+
+```{r}
+svm1 = svm(Precio01 ~ Superficie + Baños + Garaje, data=data.train01, kernel="linear", cost=0.1, scale=FALSE) 
+```
+
+Los coeficientes del clasificador SVM creado se muestran a continuacion.
+
+```{r}
+x = Viviendas01[ ,-1]
+beta = drop(t(svm1$coefs)%*%as.matrix(x[svm1$index,])) # coeficiente w
+beta0 = -svm1$rho  
+beta0
+```
+
+```{r}
+knitr::kable(t(beta), caption="Tabla 2.1. Coeficientes del modelo SVM lineal.")
+```
+
+Por lo que el clasificador SVM estimado quedaria de la siguiente manera:
+
+$$
+Precio01(Superficie, Dormitorios, Baño, Garaje, Año, Calidad, Parcela, Autovia) = 1 \quad si \quad \\
+-82.456*Superficie + 0.0842*Dormitorios - 0.562*Baños -0.425*Garaje -2.725*Año -0.162*Calidad -273.942*Parcela + 0*Autovia > 0.5
+$$
+
+$$
+Precio01(Superficie, Dormitorios, Baño, Garaje, Año, Calidad, Parcela, Autovia) = 0 \quad si \quad \\
+-82.456*Superficie + 0.0842*Dormitorios - 0.562*Baños -0.425*Garaje -2.725*Año -0.162*Calidad -273.942*Parcela + 0*Autovia > 0.5
+$$
+
+En la siguiente porcion de codigo se va a clasificar una vivienda segun las siguientes caracteristicas: Superficie= 2000; Baños= 3; Garaje= 3.
+
+```{r}
+vivienda_pred =data.frame(Superficie=c(2000),Baños=c(3), Garaje =c(3))  
+predict(svm1,vivienda_pred)
+```
+
+El clasificador lineal ha predecido que la clase de la vivienda es la clase 0.
+
+### 2.2
+
+A continuacion se ajusta un modelo SVM radial, eligiendo el parametro coste y gamma mediante validacion cruzada de 5 iteraciones y la metrica Pos Pred Value.
+
+```{r}
+n=nrow(data.train01)
+Cost.vec=c(1, 3, 5, 10, 15)
+Gamma.vec=c(0.001, 1000)
+Parameter.mat=expand.grid(Cost.vec,Gamma.vec)
+l.p=nrow(Parameter.mat)
+k1=5      # número de folds
+Accuracy.CV.SVM.radial=matrix(rep(NA,l.p*2),ncol=2)
+set.seed(5)
+folds=sample(rep(1:k1,length=n))
+for (i in 1:l.p)
+{
+  cv.accuracy=rep(NA,k1)
+  for ( k in 1:k1)
+   {
+      model.cv.temp=svm(Precio01 ~ Superficie + Baños + Garaje, data=data.train01[folds!=k, ], kernel="radial", cost=Parameter.mat[i,1],gamma=Parameter.mat[i,2],scale=FALSE) 
+      pred=predict(model.cv.temp, data.train01[folds==k,])
+      cv.accuracy[k]=confusionMatrix(pred, data.train01[folds==k,]$Precio01, positive="1",mode="everything")$byClass[3] #ByClass[3] para utilizar la metrica Pos Pred Value
+   }
+Accuracy.CV.SVM.radial[i,]=c(mean(cv.accuracy),sd(cv.accuracy))
+}
+RESULTS.CV.SVM.radial=cbind(Parameter.mat,Accuracy.CV.SVM.radial)
+colnames(RESULTS.CV.SVM.radial)=c("Coste (C)", "gamma", "Tasa de acierto","Sd")
+```
+
+Una vez obtenidos los parametros que maximizan la metrica Pos Pred Value, se mostrarán en la siguiente tabla.
+
+```{r}
+best.parameters=Parameter.mat[Accuracy.CV.SVM.radial[,1]==max(Accuracy.CV.SVM.radial[,1]),][1,]
+colnames(best.parameters) <- c("cost", "γ")
+knitr::kable((best.parameters), caption="Tabla 2.2. Parametros optimos del SVM radial que maximiza Pos Pred Value.")
+```
+
+Una vez obtenidos los parametros de configuracion del SVM, se ajusta mediante los datos de entrenamiento.
+
+```{r}
+svm.rad.best=svm(Precio01 ~ Superficie + Baños + Garaje, data=data.train01[folds!=k, ], kernel="radial", cost=best.parameters[1],gamma=best.parameters[2],scale=FALSE) 
+```
+
+### 2.3
+
+En la siguiente tabla se muestran las metricas del SVM lineal, en los conjuntos de datos de entrenamiento y test.
+
+```{r}
+#Kernel Lineal
+truth.train=data.train01$Precio
+pred.train=predict(svm1,data.train01)
+table.train=table(pred.train,truth.train)
+
+Performance.train.SVM.lineal=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+
+truth.test=data.test01$Precio
+pred.test=predict(svm1,data.test01)
+table.test=table(pred.test,truth.test)
+
+Performance.test.SVM.lineal=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+
+Error.SVM.lineal=rbind(cbind(Performance.train.SVM.lineal$overall[1],Performance.test.SVM.lineal$overall[1]),
+                       cbind(Performance.train.SVM.lineal$byClass,Performance.test.SVM.lineal$byClass))
+colnames(Error.SVM.lineal)=c("Entrenamiento","Prueba")
+
+
+knitr::kable((Error.SVM.lineal[c(1, 8, 4),]), caption="Tabla 2.3. Metricas Obtenidas por el clasificador SVM lineal.")
+```
+
+En la siguiente tabla se muestran las metricas del SVM radial, en los conjuntos de datos de entrenamiento y test.
+
+```{r}
+#Kernel Radial
+truth.train=data.train01$Precio
+pred.train=predict(svm.rad.best,data.train01)
+table.train=table(pred.train,truth.train)
+
+Performance.train.SVM.radial=confusionMatrix(table.train,positive="1",mode="everything")
+rm(truth.train,pred.train,table.train)
+
+
+truth.test=data.test01$Precio
+pred.test=predict(svm.rad.best,data.test01)
+table.test=table(pred.test,truth.test)
+
+Performance.test.SVM.radial=confusionMatrix(pred.test,truth.test,positive="1",mode="everything")
+rm(truth.test,pred.test,table.test)
+
+
+Error.SVM.radial=rbind(cbind(Performance.train.SVM.radial$overall[1],Performance.test.SVM.radial$overall[1]),
+      cbind(Performance.train.SVM.radial$byClass,Performance.test.SVM.radial$byClass))
+colnames(Error.SVM.radial)=c("Entrenamiento","Prueba")
+
+
+knitr::kable((Error.SVM.radial[c(1, 8, 4),]), caption="Tabla 2.4. Metricas Obtenidas por el clasificador SVM radial.")
+```
+
+Como se observa en las tablas anteriores, de los dos SVMs creados, el que mayor tasa de acierto obtiene en el conjunto de datos de validacion es el kernel lineal. Existen varias hipotesis para explicar este suceso, ya que, a priori un kernel radial al que se le han calculado los parametros de manera optima deberia obtener mejores resultados que un kernel lineal.
+
+Tal vez la determinación del conjunto de datos de validación hay sido mas favorable para el kernel lineal, tambien cabe recordar que las diferentes combinaciones de parametros para el SVM radial han sido pocas (unicamente 10 combinaciones posibles) y que posiblemente con otros valores para el valor de coste y gamma la precision del SVM habria aumentado.
